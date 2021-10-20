@@ -1,0 +1,22 @@
+# Hyperparameters for a simple DQN-style agent.
+import dopamine.jax.agents.dqn.dqn_agent
+import balloon_learning_environment.agents.dqn_agent
+import balloon_learning_environment.agents.networks
+import dopamine.replay_memory.circular_replay_buffer
+
+balloon_learning_environment.agents.dqn_agent.DQNAgent.network = @networks.MLPNetwork
+networks.MLPNetwork.num_layers = 1
+networks.MLPNetwork.hidden_units = 256
+JaxDQNAgent.gamma = 0.9
+JaxDQNAgent.update_horizon = 1
+JaxDQNAgent.min_replay_history = 500
+JaxDQNAgent.update_period = 4
+JaxDQNAgent.target_update_period = 100
+JaxDQNAgent.epsilon_fn = @dqn_agent.identity_epsilon
+JaxDQNAgent.optimizer = 'adam'
+JaxDQNAgent.summary_writing_frequency = 1
+dqn_agent.create_optimizer.learning_rate = 0.001
+dqn_agent.create_optimizer.eps = 3.125e-4
+
+OutOfGraphReplayBuffer.replay_capacity = 50000
+OutOfGraphReplayBuffer.batch_size = 128

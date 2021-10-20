@@ -1,0 +1,63 @@
+# coding=utf-8
+# Copyright 2021 The Balloon Learning Environment Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Tests for balloon_learning_environment.env.wind_field."""
+
+import datetime as dt
+
+from absl.testing import absltest
+from balloon_learning_environment.env import wind_field
+from balloon_learning_environment.utils import units
+
+
+class WindFieldTest(absltest.TestCase):
+
+  def setUp(self):
+    super(WindFieldTest, self).setUp()
+    self.x = units.Distance(km=2.1)
+    self.y = units.Distance(km=2.2)
+    self.delta = dt.timedelta(minutes=3)
+
+  def test_some_altitude_goes_north(self):
+    field = wind_field.SimpleStaticWindField()
+    self.assertEqual(
+        wind_field.WindVector(
+            units.Velocity(mps=0.0), units.Velocity(mps=10.0)),
+        field.get_forecast(self.x, self.y, 9323.0, self.delta))
+
+  def test_some_altitude_goes_south(self):
+    field = wind_field.SimpleStaticWindField()
+    self.assertEqual(
+        wind_field.WindVector(
+            units.Velocity(mps=0.0), units.Velocity(mps=-10.0)),
+        field.get_forecast(self.x, self.y, 13999.0, self.delta))
+
+  def test_some_altitude_goes_east(self):
+    field = wind_field.SimpleStaticWindField()
+    self.assertEqual(
+        wind_field.WindVector(
+            units.Velocity(mps=10.0), units.Velocity(mps=0.0)),
+        field.get_forecast(self.x, self.y, 5523.0, self.delta))
+
+  def test_some_altitude_goes_west(self):
+    field = wind_field.SimpleStaticWindField()
+    self.assertEqual(
+        wind_field.WindVector(
+            units.Velocity(mps=-10.0), units.Velocity(mps=0.0)),
+        field.get_forecast(self.x, self.y, 11212.0, self.delta))
+
+
+if __name__ == '__main__':
+  absltest.main()

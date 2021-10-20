@@ -1,0 +1,3 @@
+# Configuration for TensorboardCollector.
+TensorboardCollector.fine_grained_logging = False  # Off by default.
+TensorboardCollector.fine_grained_frequency = 1

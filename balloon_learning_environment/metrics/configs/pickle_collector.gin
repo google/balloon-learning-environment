@@ -1,0 +1,5 @@
+# Configuration for PickleCollector.
+# This Collector has no configurable parameters, but the code expects a gin
+# file for each collector.
+# TODO(psc): Remove this requirement so we don't need a config file if not
+# necessary.

@@ -1,0 +1,4 @@
+# Configuration for ConsoleCollector.
+ConsoleCollector.fine_grained_logging = False  # Off by default.
+ConsoleCollector.fine_grained_frequency = 1
+ConsoleCollector.save_to_file = True  # Save to file.

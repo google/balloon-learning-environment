@@ -1,0 +1,4 @@
+import balloon_learning_environment.agents.networks
+
+networks.MLPNetwork.num_layers = 1
+networks.MLPNetwork.hidden_units = 256

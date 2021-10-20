@@ -1,0 +1,30 @@
+# Hyperparameters for a simple Quantile-style agent.
+import dopamine.jax.agents.dqn.dqn_agent
+import dopamine.jax.agents.quantile.quantile_agent
+import balloon_learning_environment.agents.marco_polo_exploration
+import balloon_learning_environment.agents.quantile_agent
+import balloon_learning_environment.agents.networks
+import balloon_learning_environment.agents.random_walk_agent
+import dopamine.replay_memory.prioritized_replay_buffer
+
+QuantileAgent.network = @agents.networks.QuantileNetwork
+QuantileAgent.exploration_wrapper_constructor = @marco_polo_exploration.MarcoPoloExploration
+MarcoPoloExploration.exploratory_episode_probability = 0.8
+MarcoPoloExploration.exploratory_agent_constructor = @random_walk_agent.RandomWalkAgent
+agents.networks.QuantileNetwork.num_layers = 1
+agents.networks.QuantileNetwork.hidden_units = 600
+JaxQuantileAgent.gamma = 0.993
+JaxQuantileAgent.update_horizon = 5
+JaxQuantileAgent.min_replay_history = 500
+JaxQuantileAgent.update_period = 4
+JaxQuantileAgent.target_update_period = 100
+JaxQuantileAgent.epsilon_train = 0.0
+JaxQuantileAgent.epsilon_eval = 0.0
+JaxQuantileAgent.epsilon_fn = @dqn_agent.identity_epsilon
+JaxQuantileAgent.optimizer = 'adam'
+JaxQuantileAgent.summary_writing_frequency = 1
+dqn_agent.create_optimizer.learning_rate = 2e-6
+dqn_agent.create_optimizer.eps = 0.00002
+
+OutOfGraphPrioritizedReplayBuffer.replay_capacity = 2000000
+OutOfGraphPrioritizedReplayBuffer.batch_size = 32
