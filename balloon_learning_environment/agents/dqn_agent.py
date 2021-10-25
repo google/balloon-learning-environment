@@ -61,16 +61,19 @@ class DQNAgent(agent.Agent, dqn_agent.JaxDQNAgent):
     if self._replay.add_count > self.min_replay_history:
       if self.training_steps % self.update_period == 0:
         self._sample_from_replay_buffer()
-        self.optimizer, loss = dqn_agent.train(
+        self.optimizer_state, self.online_params, loss = dqn_agent.train(
             self.network_def,
+            self.online_params,
             self.target_network_params,
             self.optimizer,
+            self.optimizer_state,
             self.replay_elements['state'],
             self.replay_elements['action'],
             self.replay_elements['next_state'],
             self.replay_elements['reward'],
             self.replay_elements['terminal'],
-            self.cumulative_gamma)
+            self.cumulative_gamma,
+            self._loss_type)
 
         if (self.summary_writer is not None and
             self.training_steps > 0 and

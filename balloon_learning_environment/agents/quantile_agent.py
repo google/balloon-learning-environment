@@ -103,18 +103,21 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
     if self._replay.add_count > self.min_replay_history:
       if self.training_steps % self.update_period == 0:
         self._sample_from_replay_buffer()
-        self.optimizer, loss, mean_loss = quantile_agent.train(
-            self.network_def,
-            self.target_network_params,
-            self.optimizer,
-            self.replay_elements['state'],
-            self.replay_elements['action'],
-            self.replay_elements['next_state'],
-            self.replay_elements['reward'],
-            self.replay_elements['terminal'],
-            self._kappa,
-            self._num_atoms,
-            self.cumulative_gamma)
+        (self.optimizer_state, self.online_params,
+         loss, mean_loss) = quantile_agent.train(
+             self.network_def,
+             self.online_params,
+             self.target_network_params,
+             self.optimizer,
+             self.optimizer_state,
+             self.replay_elements['state'],
+             self.replay_elements['action'],
+             self.replay_elements['next_state'],
+             self.replay_elements['reward'],
+             self.replay_elements['terminal'],
+             self._kappa,
+             self._num_atoms,
+             self.cumulative_gamma)
         if self._replay_scheme == 'prioritized':
           probs = self.replay_elements['sampling_probabilities']
           loss_weights = 1.0 / jnp.sqrt(probs + 1e-10)

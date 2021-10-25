@@ -14,6 +14,7 @@ JaxDQNAgent.update_period = 4
 JaxDQNAgent.target_update_period = 100
 JaxDQNAgent.epsilon_fn = @dqn_agent.identity_epsilon
 JaxDQNAgent.optimizer = 'adam'
+JaxDQNAgent.loss_type = 'mse'  # MSE works better with Adam.
 JaxDQNAgent.summary_writing_frequency = 1
 dqn_agent.create_optimizer.learning_rate = 0.001
 dqn_agent.create_optimizer.eps = 3.125e-4
