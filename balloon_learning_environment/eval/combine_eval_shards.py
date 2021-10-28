@@ -31,7 +31,7 @@ flags.DEFINE_multi_string('models', None,
                           'The names of the methods in the directory.')
 flags.DEFINE_boolean('pretty_json', False,
                      'If true, it will write json files with an indent of 2.')
-flags.DEFINE_boolean('flight_paths', True,
+flags.DEFINE_boolean('flight_paths', False,
                      'If True, will include flight paths.')
 flags.mark_flags_as_required(['path', 'models'])
 FLAGS = flags.FLAGS
