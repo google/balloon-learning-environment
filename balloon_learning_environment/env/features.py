@@ -39,6 +39,7 @@ from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.env import wind_gp
 from balloon_learning_environment.env.balloon import balloon
 from balloon_learning_environment.env.balloon import control
+from balloon_learning_environment.env.balloon import power_table
 from balloon_learning_environment.env.balloon import pressure_range_builder
 from balloon_learning_environment.env.balloon import solar
 from balloon_learning_environment.env.balloon import standard_atmosphere
@@ -374,7 +375,6 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
       feature_vector: The feature vector to add the ambient features to. They
         will be inserted into feature_vector[:16].
     """
-
     balloon_state = self._last_balloon_state
 
     # 0: Pressure.
@@ -429,10 +429,11 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
     feature_vector[12] = float(
         not self._last_balloon_state.navigation_is_paused)
 
-    # 13-14: Energy availability.
-    # Excess energy available.
+    # 13: Excess energy available.
     feature_vector[13] = float(self._last_balloon_state.excess_energy)
-    feature_vector[14] = 0.0  # ACS power to use (*).
+    # 14: ACS power to use.
+    feature_vector[14] = power_table.lookup(balloon_state.pressure_ratio,
+                                            balloon_state.battery_soc)
 
     # 15: Internal pressure ratio.
     feature_vector[15] = balloon_state.pressure_ratio
