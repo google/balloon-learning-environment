@@ -82,6 +82,14 @@ class BalloonTest(parameterized.TestCase):
 
     self.assertEqual(b_state.excess_energy, expected)
 
+  @parameterized.parameters((5235, 1234, 1.2357), (5235, -52, 1.0))
+  def test_pressure_ratio_calculated_correctly(
+      self, pressure, superpressure, expected_ratio):
+    b_state = self.create_balloon().state
+    b_state.pressure = pressure
+    b_state.superpressure = superpressure
+    self.assertAlmostEqual(b_state.pressure_ratio, expected_ratio, places=3)
+
   def test_balloon_goes_in_wind_direction(self):
     b = self.create_balloon()
     self.assertAlmostEqual(b.state.x.meters, 0)

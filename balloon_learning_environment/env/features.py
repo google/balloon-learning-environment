@@ -435,7 +435,7 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
     feature_vector[14] = 0.0  # ACS power to use (*).
 
     # 15: Internal pressure ratio.
-    feature_vector[15] = 1.0  # Internal pressure ratio (*).
+    feature_vector[15] = balloon_state.pressure_ratio
 
   def _add_wind_features(self, feature_vector: np.ndarray) -> None:
     """Adds all wind features to the feature vector.

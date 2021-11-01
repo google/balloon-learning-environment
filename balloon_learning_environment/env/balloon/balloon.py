@@ -145,6 +145,7 @@ class BalloonState(object):
     navigation_is_paused: Whether navigation was paused on the last timestep.
 
     upwelling_infrared: The upwelling infrared value.
+    pressure_ratio: The pressure / superpressure ratio.
   """
   center_latlng: s2.LatLng
 
@@ -242,6 +243,11 @@ class BalloonState(object):
     return (self.power_safety_layer.navigation_is_paused or
             self.envelope_safety_layer.navigation_is_paused or
             self.altitude_safety_layer.navigation_is_paused)
+
+  @property
+  def pressure_ratio(self) -> float:
+    superpressure = max(self.superpressure, 0.0)
+    return (self.pressure + superpressure) / self.pressure
 
 
 class Balloon:
@@ -469,10 +475,10 @@ class Balloon:
       # Run the ACS compressor at a power level that maximizes mols of air
       # pushed into the ballonet per watt of energy at the current pressure
       # ratio (backpressure the compressor is pushing against).
-      pressure_ratio = (state.pressure + state.superpressure) / state.pressure
-      next_state.acs_power = acs.get_most_efficient_power(pressure_ratio)
+      next_state.acs_power = acs.get_most_efficient_power(state.pressure_ratio)
       # Compute mass flow rate by first computing efficiency of air flow.
-      efficiency = acs.get_fan_efficiency(pressure_ratio, next_state.acs_power)
+      efficiency = acs.get_fan_efficiency(state.pressure_ratio,
+                                          next_state.acs_power)
       next_state.acs_mass_flow = acs.get_mass_flow(next_state.acs_power,
                                                    efficiency)
     else:  # action == control.AltitudeControlCommand.STAY.
