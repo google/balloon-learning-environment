@@ -36,16 +36,16 @@ class PickleCollectorTest(absltest.TestCase):
 
   def test_with_none_base_dir(self):
     with self.assertRaises(ValueError):
-      pickle_collector.PickleCollector(None, self._na)
+      pickle_collector.PickleCollector(None, self._na, 0)
 
   def test_valid_creation(self):
-    collector = pickle_collector.PickleCollector(self._tmpdir, self._na)
+    collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
     self.assertEqual(collector._base_dir,
                      osp.join(self._tmpdir, 'metrics/pickle'))
     self.assertTrue(osp.exists(collector._base_dir))
 
   def test_pre_training(self):
-    collector = pickle_collector.PickleCollector(self._tmpdir, self._na)
+    collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
     # _current_episode is not created until `pre_training` is called.
     with self.assertRaises(AttributeError):
       _ = collector._current_episode
@@ -53,7 +53,7 @@ class PickleCollectorTest(absltest.TestCase):
     self.assertEqual(0, collector._current_episode)
 
   def test_begin_episode(self):
-    collector = pickle_collector.PickleCollector(self._tmpdir, self._na)
+    collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
     # _statistics is not created until `begin_episode` is called.
     with self.assertRaises(AttributeError):
       _ = collector._statistics
@@ -61,7 +61,7 @@ class PickleCollectorTest(absltest.TestCase):
     self.assertEqual([], collector._statistics)
 
   def test_step(self):
-    collector = pickle_collector.PickleCollector(self._tmpdir, self._na)
+    collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     collector.begin_episode()
     num_steps = 10
@@ -78,7 +78,7 @@ class PickleCollectorTest(absltest.TestCase):
     self.assertEqual(0, collector._current_episode)
 
   def test_end_episode(self):
-    collector = pickle_collector.PickleCollector(self._tmpdir, self._na)
+    collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     collector.begin_episode()
     pickle.dump = mock.MagicMock()
@@ -91,7 +91,7 @@ class PickleCollectorTest(absltest.TestCase):
     self.assertEqual(1, collector._current_episode)
 
   def test_full_run(self):
-    collector = pickle_collector.PickleCollector(self._tmpdir, self._na)
+    collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     for i in range(3):
       collector.begin_episode()

@@ -185,3 +185,23 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
     if not quantile_agent.JaxQuantileAgent.unbundle(
         self, checkpoint_dir, iteration_number, bundle):
       logging.warning('Call to parent `unbundle` failed.')
+
+  def reload_latest_checkpoint(self, checkpoint_dir: str) -> int:
+    glob = osp.join(checkpoint_dir, 'checkpoint_*.pkl')
+    def extract_episode(x):
+      return int(x[x.rfind('checkpoint_') + 11:-4])
+
+    try:
+      checkpoint_files = tf.io.gfile.glob(glob)
+    except tf.errors.NotFoundError:
+      logging.warning('Unable to reload checkpoint at %s', checkpoint_dir)
+      return -1
+
+    try:
+      latest_episode = max(extract_episode(x) for x in checkpoint_files)
+      logging.info('Will restart training from episode %d', latest_episode)
+      self.load_checkpoint(checkpoint_dir, latest_episode)
+      return latest_episode
+    except ValueError:
+      logging.warning('Unable to reload checkpoint at %s', checkpoint_dir)
+      return -1

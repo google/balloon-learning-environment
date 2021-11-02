@@ -76,6 +76,18 @@ class Agent(abc.ABC):
     """If available, load agent parameters from a checkpoint."""
     pass
 
+  def reload_latest_checkpoint(self, checkpoint_dir: str) -> int:
+    """If available, load agent parameters from the latest checkpoint.
+
+    Args:
+      checkpoint_dir: Directory where to look for checkpoints.
+
+    Returns:
+      Latest checkpoint number found, or -1 if none found.
+    """
+    del checkpoint_dir
+    return -1
+
 
 class RandomAgent(Agent):
   """A random agent."""

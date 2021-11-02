@@ -39,7 +39,8 @@ import tensorflow as tf
 class Collector(abc.ABC):
   """Abstract class for defining metric collectors."""
 
-  def __init__(self, base_dir: Union[str, None], num_actions: int):
+  def __init__(self, base_dir: Union[str, None], num_actions: int,
+               current_episode: int):
     if base_dir is not None:
       self._base_dir = osp.join(base_dir, 'metrics', self.get_name())
       # Try to create logging directory.
@@ -51,7 +52,7 @@ class Collector(abc.ABC):
     else:
       self._base_dir = None
     self._num_actions = num_actions
-    self.num_episodes = 0
+    self.num_episodes = current_episode
     self.summary_writer = None  # Should be set by subclass, if needed.
 
   @abc.abstractmethod

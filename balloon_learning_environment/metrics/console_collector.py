@@ -33,10 +33,11 @@ class ConsoleCollector(collector.Collector):
   def __init__(self,
                base_dir: Union[str, None],
                num_actions: int,
+               current_episode: int,
                fine_grained_logging: bool = gin.REQUIRED,
                fine_grained_frequency: int = gin.REQUIRED,
                save_to_file: bool = gin.REQUIRED):
-    super().__init__(base_dir, num_actions)
+    super().__init__(base_dir, num_actions, current_episode)
     if self._base_dir is not None and save_to_file:
       self._log_file = osp.join(self._base_dir, 'console.log')
     else:

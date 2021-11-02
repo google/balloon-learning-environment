@@ -29,10 +29,11 @@ class PickleCollector(collector.Collector):
 
   def __init__(self,
                base_dir: str,
-               num_actions: int):
+               num_actions: int,
+               current_episode: int):
     if base_dir is None:
       raise ValueError('Must specify a base directory for PickleCollector.')
-    super().__init__(base_dir, num_actions)
+    super().__init__(base_dir, num_actions, current_episode)
 
   def get_name(self) -> str:
     return 'pickle'

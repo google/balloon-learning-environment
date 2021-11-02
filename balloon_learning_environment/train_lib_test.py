@@ -38,6 +38,7 @@ class TrainLibTest(absltest.TestCase):
     mock_agent = mock.Mock()
     mock_agent.begin_episode.return_value = 0
     mock_agent.step.return_value = 0
+    mock_agent.reload_latest_checkpoint.return_value = -1
 
     class MockActionSpace(object):
 

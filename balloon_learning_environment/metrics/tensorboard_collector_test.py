@@ -45,19 +45,19 @@ class TensorboardCollectorTest(parameterized.TestCase):
 
   def test_with_invalid_base_dir_raises_value_error(self):
     with self.assertRaises(ValueError):
-      tensorboard_collector.TensorboardCollector(None, self._na)
+      tensorboard_collector.TensorboardCollector(None, self._na, 0)
 
   def test_without_gin_parameters_raises_runtime_error(self):
     gin.clear_config()
     with self.assertRaises(RuntimeError):
       tensorboard_collector.TensorboardCollector(
-          self.create_tempdir().full_path, self._na)
+          self.create_tempdir().full_path, self._na, 0)
 
   def test_valid_creation_with_all_required_parameters(self):
     tensorboard.SummaryWriter = mock.MagicMock()
     base_dir = self.create_tempdir().full_path
     collector = tensorboard_collector.TensorboardCollector(
-        base_dir, self._na)
+        base_dir, self._na, 0)
     self.assertEqual(collector._base_dir,
                      osp.join(base_dir, 'metrics/tensorboard'))
     self.assertTrue(osp.exists(collector._base_dir))
@@ -70,7 +70,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
 
   def test_pre_training(self):
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na)
+        self.create_tempdir().full_path, self._na, 0)
     # Neither _global_step nor _num_episodes are created until `pre_training` is
     # called.
     with self.assertRaises(AttributeError):
@@ -83,7 +83,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
 
   def test_begin_episode(self):
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na)
+        self.create_tempdir().full_path, self._na, 0)
     # Neither _episode_length nor _episode_reward are created until
     # `begin_episode` is called.
     with self.assertRaises(AttributeError):
@@ -102,7 +102,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
     self._bind_gin_parameters(fine_logging, self._fine_grained_frequency)
     tensorboard.SummaryWriter = mock.MagicMock()
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na)
+        self.create_tempdir().full_path, self._na, 0)
     self.assertEqual(1, tensorboard.SummaryWriter.call_count)
 
     collector.summary_writer.scalar = mock.MagicMock()
@@ -146,7 +146,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
     gin.bind_parameter('TensorboardCollector.fine_grained_frequency', 1)
     tensorboard.SummaryWriter = mock.MagicMock()
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na)
+        self.create_tempdir().full_path, self._na, 0)
     collector.summary_writer.scalar = mock.MagicMock()
     collector.summary_writer.flush = mock.MagicMock()
     collector.pre_training()
@@ -193,7 +193,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
     self._bind_gin_parameters(fine_logging, 1)
     tensorboard.SummaryWriter = mock.MagicMock()
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na)
+        self.create_tempdir().full_path, self._na, 0)
     collector.summary_writer.scalar = mock.MagicMock()
     collector.summary_writer.flush = mock.MagicMock()
     collector.pre_training()

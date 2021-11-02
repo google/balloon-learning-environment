@@ -32,7 +32,7 @@ class CollectorDispatcherTest(absltest.TestCase):
   def test_with_no_collectors(self):
     # This test verifies that we can run successfully with no collectors.
     metrics = collector_dispatcher.CollectorDispatcher(
-        self._tmpdir, self._na, [])
+        self._tmpdir, self._na, [], 0)
     metrics.pre_training()
     for _ in range(4):
       metrics.begin_episode()
@@ -97,7 +97,7 @@ class CollectorDispatcherTest(absltest.TestCase):
 
     # Run a collection loop.
     metrics = collector_dispatcher.CollectorDispatcher(
-        self._tmpdir, self._na, [SimpleCollector, CountCollector])
+        self._tmpdir, self._na, [SimpleCollector, CountCollector], 0)
     metrics.pre_training()
     expected_stats = []
     num_episodes = 4

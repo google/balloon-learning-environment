@@ -15,9 +15,11 @@
 
 """Tests for balloon_learning_environment.agents.quantile_agent."""
 
+import os
 import pickle
 from unittest import mock
 
+from absl import flags
 from absl import logging
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -30,6 +32,8 @@ import gin
 import jax.numpy as jnp
 import numpy as np
 import tensorflow as tf
+
+FLAGS = flags.FLAGS
 
 
 # TODO(psc): Consider using mock.patch instead.
@@ -54,6 +58,7 @@ class QuantileAgentTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
+    self._test_subdir = self.create_tempdir()
     self._num_actions = 4
     self._observation_shape = (6, 7)
     self._example_state = jnp.zeros(self._observation_shape)
@@ -228,6 +233,29 @@ class QuantileAgentTest(parameterized.TestCase):
     self.assertEqual(mock_pickle.call_count, 1)
     base_quantile_agent.JaxQuantileAgent.unbundle.assert_called_once_with(
         mock.ANY, checkpoint_dir, iteration_number, bundle)
+
+  def test_reload_latest_checkpoint_with_invalid_dir(self):
+    agent = quantile_agent.QuantileAgent(self._num_actions,
+                                         self._observation_shape)
+    self.assertEqual(
+        -1, agent.reload_latest_checkpoint('/does/not/exist'))
+
+  def test_reload_latest_checkpoint_with_empty_dir(self):
+    agent = quantile_agent.QuantileAgent(self._num_actions,
+                                         self._observation_shape)
+    self.assertEqual(
+        -1, agent.reload_latest_checkpoint(self._test_subdir))
+
+  def test_reload_latest_checkpoint(self):
+    filename = os.path.join(self._test_subdir, 'checkpoint_00123.pkl')
+    base_quantile_agent.JaxQuantileAgent.unbundle = mock.MagicMock(
+        return_value=True)
+    with tf.io.gfile.GFile(filename, 'w') as f:
+      pickle.dump({'data': 1}, f)
+
+    agent = quantile_agent.QuantileAgent(self._num_actions,
+                                         self._observation_shape)
+    self.assertEqual(123, agent.reload_latest_checkpoint(self._test_subdir))
 
 
 if __name__ == '__main__':

@@ -28,12 +28,13 @@ class TensorboardCollector(collector.Collector):
   def __init__(self,
                base_dir: str,
                num_actions: int,
+               current_episode: int,
                fine_grained_logging: bool = gin.REQUIRED,
                fine_grained_frequency: int = gin.REQUIRED):
     if not isinstance(base_dir, str):
       raise ValueError(
           'Must specify a base directory for TensorboardCollector.')
-    super().__init__(base_dir, num_actions)
+    super().__init__(base_dir, num_actions, current_episode)
     self._fine_grained_logging = fine_grained_logging
     self._fine_grained_frequency = fine_grained_frequency
     self.summary_writer = tensorboard.SummaryWriter(self._base_dir)

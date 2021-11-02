@@ -56,16 +56,17 @@ AVAILABLE_COLLECTORS = {
 }
 
 
-CollectorConstructorType = Callable[[str, int], collector.Collector]
+CollectorConstructorType = Callable[[str, int, int], collector.Collector]
 
 
 class CollectorDispatcher(object):
   """Class for collecting and reporting Balloon Learning Environment metrics."""
 
   def __init__(self, base_dir: Optional[str], num_actions: int,
-               collectors: Sequence[CollectorConstructorType]):
+               collectors: Sequence[CollectorConstructorType],
+               current_episode: int):
     self._collectors = [
-        collector_constructor(base_dir, num_actions)
+        collector_constructor(base_dir, num_actions, current_episode)
         for collector_constructor in collectors
     ]
 

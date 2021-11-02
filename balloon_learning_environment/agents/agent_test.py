@@ -45,6 +45,7 @@ class AgentTest(absltest.TestCase):
     self.assertEqual('SimpleAgent', simple_agent.get_name())
     self.assertEqual(self._na, simple_agent._num_actions)
     self.assertEqual(self._observation_shape, simple_agent._observation_shape)
+    self.assertEqual(simple_agent.reload_latest_checkpoint(''), -1)
 
 
 class RandomAgentTest(absltest.TestCase):

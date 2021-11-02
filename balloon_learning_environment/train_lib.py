@@ -47,18 +47,21 @@ def run_training_loop(
         collector_dispatcher.CollectorConstructorType]
 ) -> None:
   """Run a training loop for a specified number of steps."""
+  checkpoint_dir = osp.join(base_dir, 'checkpoints')
+  # Possibly reload the latest checkpoint, and start from the next episode
+  # number.
+  start_episode = agent.reload_latest_checkpoint(checkpoint_dir) + 1
   dispatcher = collector_dispatcher.CollectorDispatcher(
-      base_dir, env.action_space.n, collector_constructors)
+      base_dir, env.action_space.n, collector_constructors, start_episode)
   # Maybe pass on a summary writer to the environment.
   env.set_summary_writer(dispatcher.get_summary_writer())
   # Maybe pass on a sumary writer to the agent.
   agent.set_summary_writer(dispatcher.get_summary_writer())
-  checkpoint_dir = osp.join(base_dir, 'checkpoints')
 
   agent.set_mode(base_agent.AgentMode.TRAIN)
 
   dispatcher.pre_training()
-  for episode in range(num_episodes):
+  for episode in range(start_episode, num_episodes):
     dispatcher.begin_episode()
     obs = env.reset()
     # Request first action from agent.

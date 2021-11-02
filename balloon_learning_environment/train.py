@@ -68,7 +68,7 @@ def main(_) -> None:
       env.action_space.n,
       observation_shape=env.observation_space.shape)
 
-  base_dir = osp.join(FLAGS.base_dir, str(FLAGS.run_number))
+  base_dir = osp.join(FLAGS.base_dir, FLAGS.agent, str(FLAGS.run_number))
   train_lib.run_training_loop(base_dir, env, agent, FLAGS.num_episodes,
                               FLAGS.max_episode_length, collector_constructors)
 

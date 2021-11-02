@@ -53,10 +53,10 @@ class ConsoleCollectorTest(absltest.TestCase):
   def test_without_gin_parameters(self):
     gin.clear_config()
     with self.assertRaises(RuntimeError):
-      console_collector.ConsoleCollector(self._tmpdir, self._na)
+      console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
 
   def test_valid_creation(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     self.assertEqual(collector._base_dir,
                      osp.join(self._tmpdir, 'metrics/console'))
     self.assertTrue(osp.exists(collector._base_dir))
@@ -68,7 +68,7 @@ class ConsoleCollectorTest(absltest.TestCase):
                      self._fine_grained_frequency)
 
   def test_valid_creation_no_base_dir(self):
-    collector = console_collector.ConsoleCollector(None, self._na)
+    collector = console_collector.ConsoleCollector(None, self._na, 0)
     self.assertIsNone(collector._base_dir)
     self.assertIsNone(collector._log_file)
     self.assertEqual(collector._fine_grained_logging,
@@ -82,7 +82,7 @@ class ConsoleCollectorTest(absltest.TestCase):
         fine_grained_logging=self._fine_grained_logging,
         fine_grained_frequency=self._fine_grained_frequency,
         save_to_file=False)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     self.assertEqual(collector._base_dir,
                      osp.join(self._tmpdir, 'metrics/console'))
     self.assertTrue(osp.exists(collector._base_dir))
@@ -93,7 +93,7 @@ class ConsoleCollectorTest(absltest.TestCase):
                      self._fine_grained_frequency)
 
   def test_pre_training(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     self.assertIsInstance(collector._log_file_writer, tf.io.gfile.GFile)
 
@@ -103,13 +103,13 @@ class ConsoleCollectorTest(absltest.TestCase):
         fine_grained_logging=self._fine_grained_logging,
         fine_grained_frequency=self._fine_grained_frequency,
         save_to_file=False)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     with self.assertRaises(AttributeError):
       _ = collector._log_file_writer
 
   def test_begin_episode(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     # _action_counts is not created until `pre_training` is called.
     with self.assertRaises(AttributeError):
       _ = collector._action_counts
@@ -126,7 +126,7 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(0, collector._current_episode_length)
 
   def test_step(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     collector.begin_episode()
     expected_action_counts = np.zeros(self._na)
@@ -153,7 +153,7 @@ class ConsoleCollectorTest(absltest.TestCase):
     self._bind_gin_parameters(fine_grained_logging=fine_grained_logging,
                               fine_grained_frequency=fine_grained_frequency,
                               save_to_file=True)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     collector.begin_episode()
     expected_action_counts = np.zeros(self._na)
@@ -177,7 +177,7 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(num_steps, collector._current_episode_length)
 
   def test_step_with_invalid_action(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     collector.begin_episode()
     with self.assertRaises(ValueError):
@@ -188,7 +188,7 @@ class ConsoleCollectorTest(absltest.TestCase):
           step=0, action=self._na, reward=0, terminal=False))
 
   def test_end_episode(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     collector.begin_episode()
     logging.info = mock.MagicMock()
@@ -212,7 +212,7 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(1, collector._average_episode_length)
 
   def test_end_training(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     logging.info = mock.MagicMock()
     collector._log_file_writer.write = mock.MagicMock()
@@ -230,7 +230,7 @@ class ConsoleCollectorTest(absltest.TestCase):
     self._bind_gin_parameters(fine_grained_logging=True,
                               fine_grained_frequency=fine_grained_frequency,
                               save_to_file=True)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na)
+    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     num_episodes = 2
     num_steps = 4
