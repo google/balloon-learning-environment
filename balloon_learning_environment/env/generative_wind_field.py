@@ -23,21 +23,22 @@ from absl import flags
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.generative import vae
 from balloon_learning_environment.utils import units
-from flax import linen as nn
-from flax import optim
-from flax.training import checkpoints
+import flax
 import gin
 import jax
 from jax import numpy as jnp
 import numpy as np
 import scipy.interpolate
+import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
 # TODO(scandido): We need to move the checkpoint file / frozen array with
 # VAE weights to this repo and then load it from a file.
 flags.DEFINE_string(
-    'windfield_model_dir', '',
+    'windfield_params_path',
+    ('balloon_learning_environment/models/'
+     'offlineskies22_decoder.msgpack'),
     'Location of checkpoint file for GenerativeWindField.')
 
 
@@ -46,39 +47,20 @@ class GenerativeWindField(wind_field.WindField):
   """A wind field created by a generative model."""
 
   def __init__(self,
-               model_dir: Optional[str] = '',
                key: Optional[jnp.ndarray] = None):
     """GenerativeWindField Constructor.
 
     Args:
-      model_dir: Location to find the Flax VAE checkpoint to use to generate
-        the wind field. If None will use FLAGS.windfield_model_dir.
       key: An optional key to seed the wind field with. If None, will use the
         current time in milliseconds.
     """
     super(GenerativeWindField, self).__init__()
 
     key = key if key else jax.random.PRNGKey(int(time.time() * 1000))
-    # TODO(bellemare): This line should, but currently does not, prevent
-    # model_dir from being None after the ternary setting.
-    model_dir = model_dir if model_dir else FLAGS.windfield_model_dir
 
-    rng, key = jax.random.split(key)
-    params = vae.model().init(key,
-                              jnp.ones(vae.FieldShape().output_length()),
-                              rng)
-    # TODO(scandido): Parameterize this.
-    in_optimizer = optim.Adam(learning_rate=0.00001).create(params)
-
-    optimizer = checkpoints.restore_checkpoint(model_dir, in_optimizer)
-
-    # Flax behaviour is to pass through the second argument if the checkpoint
-    # file is not found. Note the == below is pointer comparison.
-    if model_dir != '' and optimizer == in_optimizer:  # pylint: disable=g-explicit-bool-comparison
-      raise ValueError(
-          'Wind model not found, provided path is: {}'.format(model_dir))
-
-    self.optimizer = jax.device_put(optimizer)
+    with tf.io.gfile.GFile(FLAGS.windfield_params_path, 'rb') as f:
+      serialized_params = f.read()
+    self.params = flax.serialization.msgpack_restore(serialized_params)
 
     self.field = None
 
@@ -104,15 +86,12 @@ class GenerativeWindField(wind_field.WindField):
     """
     latents = jax.random.normal(key, shape=(64,))
 
-    def _generate(model):
-      return model.generate(latents)
-
     # NOTE(scandido): We convert the field from a jax.numpy array to a numpy
     # array here, otherwise it'll be converted on the fly every time we
     # interpolate (due to scipy.interpolate). This conversion is a significant
     # cost.
-    self.field = np.array(
-        nn.apply(_generate, vae.model())(self.optimizer.target))
+    decoder = vae.Decoder()
+    self.field = np.array(decoder.apply(self.params, latents))
 
   def get_forecast(self, x: units.Distance, y: units.Distance, pressure: float,
                    elapsed_time: dt.timedelta) -> wind_field.WindVector:
