@@ -30,9 +30,10 @@ importlib-resources==5.4.0
 jax==0.2.24
 jaxlib==0.1.73
 joblib==1.1.0
-keras==2.6.0
+keras==2.7.0
 Keras-Preprocessing==1.1.2
 kiwisolver==1.3.2
+libclang==12.0.0
 Markdown==3.3.4
 matplotlib==3.4.3
 msgpack==1.0.2
@@ -62,8 +63,9 @@ sklearn==0.0
 tensorboard==2.6.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.0
-tensorflow==2.6.2
-tensorflow-estimator==2.6.0
+tensorflow==2.7.0rc1
+tensorflow-estimator==2.7.0
+tensorflow-io-gcs-filesystem==0.21.0
 tensorflow-probability==0.14.1
 termcolor==1.1.0
 tf-slim==1.1.0

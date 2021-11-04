@@ -22,7 +22,13 @@ We recommend using a virtual environment:
 python -m venv .venv && source .venv/bin/activate
 ```
 
-and installing all the prerequisites:
+Make sure pip is the latest version:
+
+```
+pip install --upgrade pip
+```
+
+Install all the prerequisites:
 
 ```
 pip install -r requirements.txt
