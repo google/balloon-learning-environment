@@ -26,6 +26,7 @@ from absl import app
 from absl import flags
 
 
+# TODO(joshgreaves): Rename models to agents (including README).
 flags.DEFINE_string('path', None, 'The path containing the shard results.')
 flags.DEFINE_multi_string('models', None,
                           'The names of the methods in the directory.')
