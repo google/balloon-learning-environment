@@ -36,7 +36,7 @@ _EARTH_RADIUS = units.Distance(km=6371)
 # but it may be beneficial to enforce it is included at some later date.
 # These type hints are bad, but it's what copyreg wants 😬.
 def pickle_latlng(obj: Any) -> tuple:  # pylint: disable=g-bare-generic
-  return s2.LatLng.from_degrees, (obj.lat.degrees, obj.lng.degrees)
+  return s2.LatLng.from_degrees, (obj.lat().degrees, obj.lng().degrees)
 
 copyreg.pickle(s2.LatLng, pickle_latlng)
 
@@ -61,8 +61,8 @@ def calculate_latlng_from_offset(center_latlng: s2.LatLng,
 
   cos_angle = math.cos(angle)
   sin_angle = math.sin(angle)
-  sin_from_lat = math.sin(center_latlng.lat.radians)
-  cos_from_lat = math.cos(center_latlng.lat.radians)
+  sin_from_lat = math.sin(center_latlng.lat().radians)
+  cos_from_lat = math.cos(center_latlng.lat().radians)
 
   sin_lat = (cos_angle * sin_from_lat +
              sin_angle * cos_from_lat * math.cos(heading))
@@ -71,6 +71,6 @@ def calculate_latlng_from_offset(center_latlng: s2.LatLng,
 
   new_lat = math.asin(sin_lat)
   new_lat = min(max(new_lat, -math.pi / 2.0), math.pi / 2.0)
-  new_lng = center_latlng.lng.radians + d_lng
+  new_lng = center_latlng.lng().radians + d_lng
 
   return s2.LatLng.from_radians(new_lat, new_lng).normalized()

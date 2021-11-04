@@ -41,9 +41,9 @@ class SamplingTest(parameterized.TestCase):
     latlng = sampling.sample_location(self.prng_key)
 
     # We only allow locations near the equator
-    self.assertBetween(latlng.lat.degrees, -10.0, 10.0)
+    self.assertBetween(latlng.lat().degrees, -10.0, 10.0)
     # We don't allow locations near the international date line
-    self.assertBetween(latlng.lng.degrees, -175.0, 175.0)
+    self.assertBetween(latlng.lng().degrees, -175.0, 175.0)
 
   def test_sample_time_with_seed_gives_deterministic_time(self):
     t1 = sampling.sample_time(self.prng_key)

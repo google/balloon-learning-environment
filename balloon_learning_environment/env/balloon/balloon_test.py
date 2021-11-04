@@ -56,8 +56,8 @@ class BalloonTest(parameterized.TestCase):
     b = self.create_balloon(
         x=units.Distance(km=111.0), y=units.Distance(km=111.0))
 
-    self.assertAlmostEqual(b.state.latlng.lat.degrees, 1.0, places=1)
-    self.assertAlmostEqual(b.state.latlng.lng.degrees, 1.0, places=1)
+    self.assertAlmostEqual(b.state.latlng.lat().degrees, 1.0, places=1)
+    self.assertAlmostEqual(b.state.latlng.lng().degrees, 1.0, places=1)
 
   @parameterized.named_parameters(
       dict(

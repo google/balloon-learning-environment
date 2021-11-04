@@ -113,7 +113,7 @@ def solar_calculator(latlng: s2.LatLng,
   hour_angle = math.radians(
       math.fmod(
           1440.0 * fraction_of_day + math.degrees(equation_of_time) +
-          4.0 * latlng.lng.degrees, 1440.0)) / 4.0
+          4.0 * latlng.lng().degrees, 1440.0)) / 4.0
   if hour_angle < 0:
     hour_angle += math.pi
   else:
@@ -133,8 +133,8 @@ def solar_calculator(latlng: s2.LatLng,
       np.sin(obliquity_correction) * np.sin(apparent_long_sun))
 
   zenith_angle = np.arccos(
-      np.sin(latlng.lat.radians) * np.sin(declination_sun) +
-      np.cos(latlng.lat.radians) * np.cos(declination_sun) *
+      np.sin(latlng.lat().radians) * np.sin(declination_sun) +
+      np.cos(latlng.lat().radians) * np.cos(declination_sun) *
       np.cos(hour_angle))
 
   # Compute solar elevation. Correct for atmospheric refraction.
@@ -157,9 +157,9 @@ def solar_calculator(latlng: s2.LatLng,
   el_deg = el_uncorrected_deg + atmospheric_refraction / 3600.0
 
   # Compute solar azimuth. Make sure cos_azimuth is in the range [-1, 1].
-  cos_az = ((np.sin(latlng.lat.radians) * np.cos(zenith_angle) -
+  cos_az = ((np.sin(latlng.lat().radians) * np.cos(zenith_angle) -
              np.sin(declination_sun)) /
-            (np.cos(latlng.lat.radians) * np.sin(zenith_angle)))
+            (np.cos(latlng.lat().radians) * np.sin(zenith_angle)))
   az_unwrapped = np.arccos(np.clip(cos_az, -1.0, 1.0))
   if hour_angle > 0:
     az_deg = math.degrees(az_unwrapped) + 180.0
@@ -446,7 +446,7 @@ def get_next_sunrise_sunset(
   """
   # This avoids dealing with polar day/night.
   # TODO(joshgreaves): Decide if we want to deal with the polar cases.
-  assert abs(latlng.lat.degrees) < 60.0, 'High latitudes not supported.'
+  assert abs(latlng.lat().degrees) < 60.0, 'High latitudes not supported.'
 
   next_noon, _ = get_next_solar_noon(latlng, time, time_delta)
   next_midnight, _ = get_next_solar_midnight(latlng, time, time_delta)

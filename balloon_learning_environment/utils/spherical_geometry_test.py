@@ -40,7 +40,7 @@ class SphericalGeometryTest(parameterized.TestCase):
     new_latlng = spherical_geometry.calculate_latlng_from_offset(
         center_latlng, x, y)
 
-    self.assertAlmostEqual(new_latlng.lat.degrees, lat + 1.0, places=2)
+    self.assertAlmostEqual(new_latlng.lat().degrees, lat + 1.0, places=2)
 
   def test_offset_latlng_gives_1_degree_longitude_per_111km_at_equator(self):
     center_latlng = s2.LatLng.from_degrees(0.0, 0.0)
@@ -50,7 +50,7 @@ class SphericalGeometryTest(parameterized.TestCase):
     new_latlng = spherical_geometry.calculate_latlng_from_offset(
         center_latlng, x, y)
 
-    self.assertAlmostEqual(new_latlng.lng.degrees, 1.0, places=2)
+    self.assertAlmostEqual(new_latlng.lng().degrees, 1.0, places=2)
 
   def test_offset_latlng_gives_larger_longitude_change_away_from_equator(self):
     center_latlng = s2.LatLng.from_degrees(45.0, 0.0)
@@ -64,7 +64,7 @@ class SphericalGeometryTest(parameterized.TestCase):
     # too much greater. These numbers are somewhat arbitrary - they are more
     # of a sanity check. The only alternative to this is to directly
     # re-write the formula.
-    self.assertBetween(new_latlng.lng.degrees, 1.25, 1.75)
+    self.assertBetween(new_latlng.lng().degrees, 1.25, 1.75)
 
   def test_offset_latlng_wraps_around_north_pole(self):
     center_latlng = s2.LatLng.from_degrees(89.0, -90.0)
@@ -76,8 +76,8 @@ class SphericalGeometryTest(parameterized.TestCase):
 
     # We have gone over the North pole, so latitude should be 89 again,
     # but we have gon half way around the world longitudinally.
-    self.assertAlmostEqual(new_latlng.lat.degrees, 89.0, places=2)
-    self.assertAlmostEqual(new_latlng.lng.degrees, 90.0, places=2)
+    self.assertAlmostEqual(new_latlng.lat().degrees, 89.0, places=2)
+    self.assertAlmostEqual(new_latlng.lng().degrees, 90.0, places=2)
 
   @parameterized.named_parameters(
       dict(
@@ -102,7 +102,7 @@ class SphericalGeometryTest(parameterized.TestCase):
     new_latlng = spherical_geometry.calculate_latlng_from_offset(
         center_latlng, x, y)
 
-    self.assertAlmostEqual(new_latlng.lng.degrees, expected)
+    self.assertAlmostEqual(new_latlng.lng().degrees, expected)
 
 
 if __name__ == '__main__':
