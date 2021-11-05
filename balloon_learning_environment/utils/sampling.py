@@ -148,5 +148,5 @@ def sample_upwelling_infrared(key: jnp.ndarray,
     else:
       raise ValueError(f'Invalid distribution type: {distribution_type}')
     if sample >= MIN_ALLOWABLE_UPWELLING_IR:
-      return sample
+      return sample.item()
     key, _ = jax.random.split(key, num=2)

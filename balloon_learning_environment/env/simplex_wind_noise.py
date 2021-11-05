@@ -23,6 +23,7 @@ import math
 from balloon_learning_environment.utils import units
 import jax
 from jax import numpy as jnp
+import numpy as np
 import opensimplex
 
 
@@ -108,7 +109,9 @@ class NoisyWindHarmonic:
     # the fact that OpenSimplex does not return a noise that is random at
     # the origin (it is always zero). More generally, the distribution of
     # noise at a location depends on that location.
-    self._offsets = SimplexOffset(*(jax.random.uniform(key, (4,)) * 2.0 - 1.0))
+    random_translation = jax.random.uniform(key, (4,)) * 2.0 - 1.0
+    random_translation = np.asarray(random_translation)
+    self._offsets = SimplexOffset(*random_translation)
 
   def get_noise(self, x: units.Distance, y: units.Distance, pressure: float,
                 elapsed_time: dt.timedelta) -> float:
