@@ -25,6 +25,7 @@ _eval_suites = dict()
 
 _eval_suites['big_eval'] = eval_lib.EvaluationSuite(list(range(10_000)), 960)
 _eval_suites['medium_eval'] = eval_lib.EvaluationSuite(list(range(1_000)), 960)
+_eval_suites['small_eval'] = eval_lib.EvaluationSuite(list(range(100)), 960)
 _eval_suites['tiny_eval'] = eval_lib.EvaluationSuite(list(range(10)), 960)
 _eval_suites['micro_eval'] = eval_lib.EvaluationSuite([0], 960)
 
