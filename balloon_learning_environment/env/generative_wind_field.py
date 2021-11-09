@@ -17,7 +17,7 @@
 
 import datetime as dt
 import time
-from typing import Optional
+from typing import List, Optional, Sequence, Union
 
 from absl import flags
 from balloon_learning_environment.env import wind_field
@@ -112,6 +112,67 @@ class GenerativeWindField(wind_field.WindField):
     if self.field is None:
       raise RuntimeError('Must call reset before get_forecast.')
 
+    point = self._prepare_get_forecast_inputs(x, y, pressure, elapsed_time)
+    point = point.reshape(-1)
+    uv = scipy.interpolate.interpn(
+        self._grid, self.field, point, fill_value=True)
+    return wind_field.WindVector(units.Velocity(mps=uv[0][0]),
+                                 units.Velocity(mps=uv[0][1]))
+
+  def get_forecast_column(
+      self,
+      x: units.Distance,
+      y: units.Distance,
+      pressures: Sequence[float],
+      elapsed_time: dt.timedelta) -> List[wind_field.WindVector]:
+    """A convenience function for getting multiple forecasts in a column.
+
+    This allows a simple optimization of the generative wind field.
+
+    Args:
+      x: Distance from the station keeping target along the latitude
+        parallel.
+      y: Distance from the station keeping target along the longitude
+        parallel.
+      pressures: Multiple pressures to get a forecast for, in Pascals. (This is
+        a proxy for altitude.)
+      elapsed_time: Elapsed time from the "beginning" of the wind field.
+
+    Returns:
+      WindVectors for each pressure level in the WindField.
+
+    Raises:
+      RuntimeError: if called before reset().
+    """
+    if self.field is None:
+      raise RuntimeError('Must call reset before get_forecast.')
+
+    point = self._prepare_get_forecast_inputs(x, y, pressures, elapsed_time)
+    uv = scipy.interpolate.interpn(
+        self._grid, self.field, point, fill_value=True)
+
+    result = list()
+    for i in range(len(pressures)):
+      result.append(wind_field.WindVector(units.Velocity(mps=uv[i][0]),
+                                          units.Velocity(mps=uv[i][1])))
+    return result
+
+  @staticmethod
+  def _boomerang(t: float, max_val: float) -> float:
+    """Computes a value that boomerangs between 0 and max_val."""
+    cycle_direction = int(t / max_val) % 2
+    remainder = t % max_val
+
+    if cycle_direction % 2 == 0:  # Forward.
+      return remainder
+    else:  # Backward.
+      return max_val - remainder
+
+  def _prepare_get_forecast_inputs(self,
+                                   x: units.Distance,
+                                   y: units.Distance,
+                                   pressure: Union[Sequence[float], float],
+                                   elapsed_time: dt.timedelta) -> np.ndarray:
     # TODO(bellemare): Give a units might be wrong warning if querying 10,000s
     # km away.
 
@@ -124,7 +185,7 @@ class GenerativeWindField(wind_field.WindField):
     y_km = np.clip(y_km, -self.field_shape.latlng_displacement_km,
                    self.field_shape.latlng_displacement_km).item()
     pressure = np.clip(pressure, self.field_shape.min_pressure_pa,
-                       self.field_shape.max_pressure_pa).item()
+                       self.field_shape.max_pressure_pa)
 
     # Generated wind fields have a fixed time dimension, often 48 hours.
     # Typically queries will be between 0-48 hours so most of the time it is
@@ -142,19 +203,12 @@ class GenerativeWindField(wind_field.WindField):
           elapsed_hours,
           self.field_shape.time_horizon_hours)
 
-    point = (x_km, y_km, pressure, time_field_position)
-    uv = scipy.interpolate.interpn(
-        self._grid, self.field, point, fill_value=True)
-    return wind_field.WindVector(units.Velocity(mps=uv[0][0]),
-                                 units.Velocity(mps=uv[0][1]))
+    num_points = 1 if isinstance(pressure, float) else len(pressure)
+    point = np.empty((num_points, 4), dtype=np.float32)
+    point[:, 0] = x_km
+    point[:, 1] = y_km
+    point[:, 2] = pressure
+    point[:, 3] = time_field_position
 
-  @staticmethod
-  def _boomerang(t: float, max_val: float) -> float:
-    """Computes a value that boomerangs between 0 and max_val."""
-    cycle_direction = int(t / max_val) % 2
-    remainder = t % max_val
+    return point
 
-    if cycle_direction % 2 == 0:  # Forward.
-      return remainder
-    else:  # Backward.
-      return max_val - remainder

@@ -58,6 +58,16 @@ class WindFieldTest(absltest.TestCase):
             units.Velocity(mps=-10.0), units.Velocity(mps=0.0)),
         field.get_forecast(self.x, self.y, 11212.0, self.delta))
 
+  def test_get_forecast_column_gives_same_result_as_get_forecast(self):
+    field = wind_field.SimpleStaticWindField()
+    forecast_10k = field.get_forecast(self.x, self.y, 10_000.0, self.delta)
+    forecast_11k = field.get_forecast(self.x, self.y, 11_000.0, self.delta)
+    forecast_column = field.get_forecast_column(
+        self.x, self.y, [10_000.0, 11_000.0], self.delta)
+
+    self.assertEqual(forecast_10k, forecast_column[0])
+    self.assertEqual(forecast_11k, forecast_column[1])
+
 
 if __name__ == '__main__':
   absltest.main()

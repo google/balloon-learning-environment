@@ -23,7 +23,7 @@ by different wind fields. It also handles adding wind noise.
 
 import abc
 import datetime as dt
-from typing import NamedTuple
+from typing import List, NamedTuple, Sequence
 
 from balloon_learning_environment.env import simplex_wind_noise
 from balloon_learning_environment.utils import units
@@ -85,6 +85,30 @@ class WindField(abc.ABC):
     Returns:
       A WindVector for the position in the WindField.
     """
+
+  def get_forecast_column(self,
+                          x: units.Distance,
+                          y: units.Distance,
+                          pressures: Sequence[float],
+                          elapsed_time: dt.timedelta) -> List[WindVector]:
+    """A convenience function for getting multiple forecasts in a column.
+
+    This allows a simple optimization of the generative wind field.
+
+    Args:
+      x: Distance from the station keeping target along the latitude
+        parallel.
+      y: Distance from the station keeping target along the longitude
+        parallel.
+      pressures: Multiple pressures to get a forecast for, in Pascals. (This is
+        a proxy for altitude.)
+      elapsed_time: Elapsed time from the "beginning" of the wind field.
+
+    Returns:
+      WindVectors for each pressure level in the WindField.
+    """
+    return [self.get_forecast(x, y, pressure, elapsed_time)
+            for pressure in pressures]
 
   def reset(self, key: jnp.ndarray, date_time: dt.datetime) -> None:
     """Resets the wind field with a specific PRNG key.

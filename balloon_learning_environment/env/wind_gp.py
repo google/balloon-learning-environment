@@ -221,10 +221,15 @@ class WindGP(object):
       locations: N x 4 array of locations at which predictions have been made.
       means: 2D array of predicted deviations from the forecast.
     """
-    for index, location in enumerate(locations):
-      forecast = self.wind_forecast.get_forecast(
-          units.Distance(m=location[0]), units.Distance(m=location[1]),
-          location[2], dt.timedelta(seconds=location[3]))
+    # This checks that all x, y, and time are the same in each row.
+    assert (locations[1:, [0, 1, 3]] == locations[0, [0, 1, 3]]).all()
 
+    forecasts = self.wind_forecast.get_forecast_column(
+        units.Distance(m=locations[0, 0]),
+        units.Distance(m=locations[0, 1]),
+        locations[:, 2],
+        dt.timedelta(seconds=locations[0, 3]))
+
+    for index, forecast in enumerate(forecasts):
       means[index][0] += forecast.u.meters_per_second
       means[index][1] += forecast.v.meters_per_second
