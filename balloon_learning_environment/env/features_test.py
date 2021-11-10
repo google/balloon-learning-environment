@@ -400,7 +400,31 @@ class PerciatelliFeaturesTest(parameterized.TestCase):
 
     self.assertEqual(feature_vector[13], expected)
 
-  # TODO(joshgreaves): Test ACS power to use ambient feature.
+  def test_acs_power_to_use_is_in_unit_interval(self):
+    # 15th ambient feature. Found at feature_vector[14].
+    observation = self.create_observation()
+
+    self.features.observe(observation)
+    feature_vector = self.features.get_features()
+
+    self.assertBetween(feature_vector[14], 0.0, 1.0)
+
+  def test_acs_power_to_use_dereases_at_low_altitude(self):
+    # 15th ambient feature. Found at feature_vector[14].
+    # The ACS takes energy to pump air into the envelope. The higher the
+    # ambient pressure (i.e. the lower the altitude), the easier that is.
+    low_observation = self.create_observation(pressure=12_000.0)
+    high_observation = self.create_observation(pressure=5_000.0)
+
+    # In this test, it is fine to jump the balloon around, since we are just
+    # looking at the acs_power_to_use feature, which doesn't depend on history.
+    self.features.observe(low_observation)
+    low_fv = self.features.get_features()
+    self.features.observe(high_observation)
+    high_fv = self.features.get_features()
+
+    self.assertGreater(high_fv[14], low_fv[14])
+
   # TODO(joshgreaves): Test ACS pressure ratio feature.
 
   # --------------- Named Feature Tests ---------------

@@ -432,8 +432,11 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
     # 13: Excess energy available.
     feature_vector[13] = float(self._last_balloon_state.excess_energy)
     # 14: ACS power to use.
-    feature_vector[14] = power_table.lookup(balloon_state.pressure_ratio,
-                                            balloon_state.battery_soc)
+    power_to_use = power_table.lookup(balloon_state.pressure_ratio,
+                                      balloon_state.battery_soc)
+    power_to_use = transforms.linear_rescale_with_saturation(power_to_use,
+                                                             100, 300)
+    feature_vector[14] = power_to_use
 
     # 15: Internal pressure ratio.
     feature_vector[15] = balloon_state.pressure_ratio
