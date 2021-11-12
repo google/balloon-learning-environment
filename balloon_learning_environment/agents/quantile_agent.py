@@ -15,12 +15,12 @@
 
 """A wrapper for training the Dopamine QR-DQN agent."""
 
-import os.path as osp
-import pickle
+import functools
 from typing import Callable, Optional, Sequence, Union
 
 from absl import logging
 from balloon_learning_environment.agents import agent
+from balloon_learning_environment.agents import dopamine_utils
 from balloon_learning_environment.agents import exploration
 from balloon_learning_environment.agents import marco_polo_exploration  # pylint: disable=unused-import
 from dopamine.jax.agents.quantile import quantile_agent
@@ -28,7 +28,6 @@ from flax import linen as nn
 import gin
 import jax.numpy as jnp
 import numpy as np
-import tensorflow as tf
 
 
 @gin.configurable
@@ -149,58 +148,27 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
     else:
       self.eval_mode = True
 
-  def _make_checkpoint_filename(self, checkpoint_dir: str,
-                                iteration_number: int) -> str:
-    return osp.join(checkpoint_dir, f'checkpoint_{iteration_number:05d}.pkl')
-
   def save_checkpoint(self, checkpoint_dir: str, iteration_number: int) -> None:
     """Checkpoint agent parameters as a pickled dict."""
-    # Try to create checkpoint directory if it doesn't exist.
-    try:
-      tf.io.gfile.makedirs(checkpoint_dir)
-    except tf.errors.PermissionDeniedError:
-      # If it already exists, ignore exception.
-      pass
-
-    bundle = quantile_agent.JaxQuantileAgent.bundle_and_checkpoint(
-        self, checkpoint_dir, iteration_number)
-    if bundle is None:
-      logging.warning('Unable to checkpoint to %s at iteration %d.',
-                      checkpoint_dir, iteration_number)
-      return
-
-    filename = self._make_checkpoint_filename(checkpoint_dir, iteration_number)
-    with tf.io.gfile.GFile(filename, 'w') as fout:
-      pickle.dump(bundle, fout)
+    dopamine_utils.save_checkpoint(
+        checkpoint_dir, iteration_number,
+        functools.partial(quantile_agent.JaxQuantileAgent.bundle_and_checkpoint,
+                          self))
 
   def load_checkpoint(self, checkpoint_dir: str, iteration_number: int) -> None:
     """Checkpoint agent parameters as a pickled dict."""
-    filename = self._make_checkpoint_filename(checkpoint_dir, iteration_number)
-    if not tf.io.gfile.exists(filename):
-      logging.warning('Unable to restore bundle from %s', filename)
-      return
-
-    with tf.io.gfile.GFile(filename, 'rb') as fin:
-      bundle = pickle.load(fin)
-    if not quantile_agent.JaxQuantileAgent.unbundle(
-        self, checkpoint_dir, iteration_number, bundle):
-      logging.warning('Call to parent `unbundle` failed.')
+    dopamine_utils.load_checkpoint(
+        checkpoint_dir, iteration_number,
+        functools.partial(quantile_agent.JaxQuantileAgent.unbundle, self))
 
   def reload_latest_checkpoint(self, checkpoint_dir: str) -> int:
-    glob = osp.join(checkpoint_dir, 'checkpoint_*.pkl')
-    def extract_episode(x):
-      return int(x[x.rfind('checkpoint_') + 11:-4])
-
-    try:
-      checkpoint_files = tf.io.gfile.glob(glob)
-    except tf.errors.NotFoundError:
+    latest_episode = dopamine_utils.get_latest_checkpoint(checkpoint_dir)
+    if latest_episode < 0:
       logging.warning('Unable to reload checkpoint at %s', checkpoint_dir)
       return -1
-
     try:
-      latest_episode = max(extract_episode(x) for x in checkpoint_files)
-      logging.info('Will restart training from episode %d', latest_episode)
       self.load_checkpoint(checkpoint_dir, latest_episode)
+      logging.info('Will restart training from episode %d', latest_episode)
       return latest_episode
     except ValueError:
       logging.warning('Unable to reload checkpoint at %s', checkpoint_dir)
