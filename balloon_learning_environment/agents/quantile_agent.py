@@ -39,7 +39,8 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
       network: nn.Module = gin.REQUIRED,
       exploration_wrapper_constructor: Callable[
           [int, Sequence[int]], exploration.Exploration] = gin.REQUIRED,
-      seed: Optional[int] = None):
+      seed: Optional[int] = None,
+      checkpoint_duration: Optional[int] = 5):
     """Create the Agent.
 
     This agent enables one to wrap action selection with another agent, such
@@ -52,7 +53,10 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
       network: Network to use for training and inference.
       exploration_wrapper_constructor: Exploration wrapper for action selection.
       seed: Optional seed for the PRNG.
+      checkpoint_duration: Optional duration of checkpoints for garbage
+        collection.
     """
+    self._checkpoint_duration = checkpoint_duration
     # Although Python MRO goes from left to right, we call each __init__
     # function explicitly as opposed to using `super()` (which would just call
     # agent.Agent's init) to avoid confusion.
@@ -154,6 +158,11 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
         checkpoint_dir, iteration_number,
         functools.partial(quantile_agent.JaxQuantileAgent.bundle_and_checkpoint,
                           self))
+    # Get rid of old checkpoints if necessary.
+    if self._checkpoint_duration is not None:
+      dopamine_utils.clean_up_old_checkpoints(
+          checkpoint_dir, iteration_number,
+          checkpoint_duration=self._checkpoint_duration)
 
   def load_checkpoint(self, checkpoint_dir: str, iteration_number: int) -> None:
     """Checkpoint agent parameters as a pickled dict."""

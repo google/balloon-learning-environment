@@ -83,3 +83,26 @@ def get_latest_checkpoint(checkpoint_dir: str) -> int:
   except ValueError:
     return -1
   return latest_episode
+
+
+def clean_up_old_checkpoints(checkpoint_dir: str,
+                             episode_number: int,
+                             checkpoint_duration: int = 5) -> None:
+  """Removes sufficiently old checkpoints.
+
+  Args:
+    checkpoint_dir: Directory where checkpoints are stored.
+    episode_number: Current episode number.
+    checkpoint_duration: How long (in terms of episodes) a checkpoint should
+      last.
+  """
+  stale_episode_number = episode_number - checkpoint_duration
+
+  for i in range(stale_episode_number):
+    stale_file = _make_checkpoint_filename(checkpoint_dir, i)
+    try:
+      tf.io.gfile.remove(stale_file)
+    except tf.errors.NotFoundError:
+      # Ignore if file not found.
+      logging.info('Unable to remove %s.', stale_file)
+

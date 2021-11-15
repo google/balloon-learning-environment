@@ -107,5 +107,33 @@ class DopamineUtilsTest(parameterized.TestCase):
     self.assertEqual(123,
                      dopamine_utils.get_latest_checkpoint(self._test_subdir))
 
+  def test_clean_up_old_checkpoints_with_empty_dir(self):
+    dopamine_utils.clean_up_old_checkpoints(self._test_subdir, 10)
+
+  @parameterized.parameters((None), (5), (100), (200))
+  def test_clean_up_old_checkpoints(self, checkpoint_duration):
+    last_checkpoint = 100
+    for i in range(last_checkpoint):
+      filename = osp.join(self._test_subdir, f'checkpoint_{i:05d}.pkl')
+      _ = self.create_tempfile(filename).full_path
+    # First make sure all the files were created.
+    self.assertLen(tf.io.gfile.glob(osp.join(self._test_subdir, '*')),
+                   last_checkpoint)
+    if checkpoint_duration is None:
+      dopamine_utils.clean_up_old_checkpoints(self._test_subdir, 100)
+      checkpoint_duration = 5  # Default value.
+    else:
+      dopamine_utils.clean_up_old_checkpoints(
+          self._test_subdir, 100, checkpoint_duration=checkpoint_duration)
+    # Ensure only 5 checkpoints remain (the default).
+    remaining_checkpoints = tf.io.gfile.glob(osp.join(self._test_subdir, '*'))
+    self.assertLen(remaining_checkpoints,
+                   min(checkpoint_duration, last_checkpoint))
+    # Verify that these are the last checkpoint_duration checkpoints.
+    for i in range(max(0, last_checkpoint - checkpoint_duration),
+                   last_checkpoint):
+      filename = osp.join(self._test_subdir, f'checkpoint_{i:05d}.pkl')
+      self.assertIn(filename, remaining_checkpoints)
+
 if __name__ == '__main__':
   absltest.main()
