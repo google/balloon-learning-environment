@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Greaves"
+  given-names: "Joshua"
+- family-names: "Candido"
+  given-names: "Salvatore"
+- family-names: "Dumoulin"
+  given-names: "Vincent"
+- family-names: "Goroshin"
+  given-names: "Ross"
+- family-names: "Ponda"
+  given-names: "Sameera S."
+- family-names: "Bellemare"
+  given-names: "Marc G."
+- family-names: "Castro"
+  given-names: "Pablo Samuel"
+title: "Balloon Learning Environment"
+version: 1.0.0
+date-released: 2021-12-06
+url: "https://github.com/google/balloon-learning-environment"
