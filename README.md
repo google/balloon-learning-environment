@@ -39,6 +39,17 @@ recommend installing jax with GPU support.
 See the [jax codebase](https://github.com/google/jax#pip-installation-gpu-cuda)
 for instructions.
 
+## Training an Agent
+The set of agents available to train are listed in the [Agent
+Registry](https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents/agent_registry.py).
+You can train one of these with the following command:
+
+```
+python -m balloon_learning_environment.train \
+  --base_dir=/tmp/ble/train \
+  --agent=quantile
+```
+
 ## Evaluating an Agent
 
 See the [evaluation readme](https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/README.md) for instructions on evaluating an agent.
