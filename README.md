@@ -43,3 +43,19 @@ for instructions.
 
 See the [evaluation readme](https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/README.md) for instructions on evaluating an agent.
 
+## Giving credit
+
+If you use the Balloon Learning Environment in your work, we ask that you use
+the following BibTeX entry:
+
+```
+@software{Greaves_Balloon_Learning_Environment_2021,
+  author = {Greaves, Joshua and Candido, Salvatore and Dumoulin, Vincent and Goroshin, Ross and Ponda, Sameera S. and Bellemare, Marc G. and Castro, Pablo Samuel},
+  month = {12},
+  title = {{Balloon Learning Environment}},
+  url = {https://github.com/google/balloon-learning-environment},
+  version = {1.0.0},
+  year = {2021}
+}
+```
+
