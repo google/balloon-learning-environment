@@ -43,6 +43,8 @@ class DQNAgentTest(parameterized.TestCase):
     self._observation_shape = (6, 7)
     self._example_state = jnp.zeros(self._observation_shape)
     gin.parse_config_file(agent_registry.REGISTRY['dqn'][1])
+    # Override 8 layers to 1 layer for speed ⚡️
+    gin.bind_parameter('networks.MLPNetwork.num_layers', 1)
 
   def test_agent_defaults(self):
     agent = dqn_agent.DQNAgent(self._num_actions, self._observation_shape)

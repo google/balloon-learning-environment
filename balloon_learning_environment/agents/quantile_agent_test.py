@@ -63,6 +63,9 @@ class QuantileAgentTest(parameterized.TestCase):
     self._observation_shape = (6, 7)
     self._example_state = jnp.zeros(self._observation_shape)
     gin.parse_config_file(agent_registry.REGISTRY['quantile'][1])
+    # Override layers=1 for speed, and num_atoms=200 for historical reasons.
+    gin.bind_parameter('agents.networks.QuantileNetwork.num_layers', 1)
+    gin.bind_parameter('JaxQuantileAgent.num_atoms', 200)
 
   def test_agent_defaults(self):
     agent = quantile_agent.QuantileAgent(self._num_actions,

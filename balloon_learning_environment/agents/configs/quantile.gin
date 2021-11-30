@@ -11,7 +11,7 @@ QuantileAgent.network = @agents.networks.QuantileNetwork
 QuantileAgent.exploration_wrapper_constructor = @marco_polo_exploration.MarcoPoloExploration
 MarcoPoloExploration.exploratory_episode_probability = 0.8
 MarcoPoloExploration.exploratory_agent_constructor = @random_walk_agent.RandomWalkAgent
-agents.networks.QuantileNetwork.num_layers = 1
+agents.networks.QuantileNetwork.num_layers = 8
 agents.networks.QuantileNetwork.hidden_units = 600
 JaxQuantileAgent.gamma = 0.993
 JaxQuantileAgent.update_horizon = 5
@@ -23,6 +23,8 @@ JaxQuantileAgent.epsilon_eval = 0.0
 JaxQuantileAgent.epsilon_fn = @dqn_agent.identity_epsilon
 JaxQuantileAgent.optimizer = 'adam'
 JaxQuantileAgent.summary_writing_frequency = 1
+JaxQuantileAgent.num_atoms = 51
+JaxQuantileAgent.allow_partial_reload = True
 dqn_agent.create_optimizer.learning_rate = 2e-6
 dqn_agent.create_optimizer.eps = 0.00002
 

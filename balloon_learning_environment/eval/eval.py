@@ -53,15 +53,25 @@ flags.DEFINE_string('checkpoint_dir', None,
                     'The directory to load checkpoints from.')
 flags.DEFINE_integer('checkpoint_idx', None,
                      'The checkpoint iteration number to load.')
+flags.DEFINE_string(
+    'name_override', None,
+    'If supplied, this will be the name used for the json output file.')
 FLAGS = flags.FLAGS
 
 
 def write_result(result: Sequence[eval_lib.EvaluationResult]) -> None:
   """Writes an evaluation result as a json file."""
-  if FLAGS.num_shards > 1:
-    file_name = f'{FLAGS.agent}_{FLAGS.shard_idx}.json'
+  if FLAGS.name_override:
+    file_name = FLAGS.name_override
+  elif FLAGS.checkpoint_idx is not None:
+    file_name = f'{FLAGS.agent}_{FLAGS.checkpoint_idx}'
   else:
-    file_name = f'{FLAGS.agent}.json'
+    file_name = FLAGS.agent
+
+  if FLAGS.num_shards > 1:
+    file_name = f'{file_name}_{FLAGS.shard_idx}'
+  file_name = f'{file_name}.json'
+
   dir_path = os.path.join(FLAGS.output_dir, FLAGS.suite)
   file_path = os.path.join(dir_path, file_name)
 
