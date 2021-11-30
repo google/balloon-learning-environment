@@ -77,7 +77,7 @@ class EvalLibTest(absltest.TestCase):
     time_within_radius = 5.5
     out_of_power = False
     envelope_burst = False
-    no_superpressure = False
+    zeropressure = False
     final_timestep = 1
     power_percent = 0.95
     atmosphere = standard_atmosphere.Atmosphere(jax.random.PRNGKey(0))
@@ -96,7 +96,7 @@ class EvalLibTest(absltest.TestCase):
         time_within_radius=time_within_radius,
         out_of_power=out_of_power,
         envelope_burst=envelope_burst,
-        no_superpressure=no_superpressure,
+        zeropressure=zeropressure,
         final_timestep=final_timestep,
         flight_path=flight_path)
 
@@ -108,7 +108,7 @@ class EvalLibTest(absltest.TestCase):
     self.assertEqual(eval_dict['time_within_radius'], time_within_radius)
     self.assertEqual(eval_dict['out_of_power'], out_of_power)
     self.assertEqual(eval_dict['envelope_burst'], envelope_burst)
-    self.assertEqual(eval_dict['no_superpressure'], no_superpressure)
+    self.assertEqual(eval_dict['zeropressure'], zeropressure)
     self.assertEqual(eval_dict['final_timestep'], final_timestep)
 
     flight_path_point = eval_dict['flight_path'][0]

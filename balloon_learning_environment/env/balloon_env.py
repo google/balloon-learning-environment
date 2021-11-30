@@ -139,9 +139,9 @@ class BalloonEnv(gym.Env):
     out_of_power = balloon_state.status == balloon.BalloonStatus.OUT_OF_POWER
     envelope_burst = (
         balloon_state.status == balloon.BalloonStatus.BURST)
-    no_superpressure = (
+    zeropressure = (
         balloon_state.status == balloon.BalloonStatus.ZEROPRESSURE)
-    is_terminal = out_of_power or envelope_burst or no_superpressure
+    is_terminal = out_of_power or envelope_burst or zeropressure
 
     self._gather_summaries(action)
     self._global_iteration += 1
@@ -149,7 +149,7 @@ class BalloonEnv(gym.Env):
     return observation, reward, is_terminal, {
         'out_of_power': out_of_power,
         'envelope_burst': envelope_burst,
-        'no_superpressure': no_superpressure,
+        'zeropressure': zeropressure,
         'time_elapsed': balloon_state.time_elapsed}
 
   def reset(self) -> np.ndarray:

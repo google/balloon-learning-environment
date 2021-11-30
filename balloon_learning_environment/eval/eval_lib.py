@@ -83,8 +83,8 @@ class EvaluationResult:
       out of power.
     envelope_burst: True if the environment terminated because the envelope
       burst.
-    no_superpressure: True if the environment ended because the envelope
-      had 0 superpressure.
+    zeropressure: True if the environment ended because the balloon
+      zeropressured.
     final_timestep: The index of the final timestep. May be used to detect
       whether the balloon reached a terminal state.
     flight_path: The flight path the balloon took.
@@ -94,7 +94,7 @@ class EvaluationResult:
   time_within_radius: float
   out_of_power: bool
   envelope_burst: bool
-  no_superpressure: bool
+  zeropressure: bool
   final_timestep: int
   flight_path: Sequence[balloon.BalloonState]
 
@@ -146,7 +146,7 @@ def eval_agent(agent: base_agent.Agent, env: balloon_env.BalloonEnv,
     step_count = 0
     out_of_power = False
     envelope_burst = False
-    no_superpressure = False
+    zeropressure = False
     while step_count < eval_suite.max_episode_length:
       observation, reward, is_done, info = env.step(action)
       action = agent.step(reward, observation)
@@ -162,7 +162,7 @@ def eval_agent(agent: base_agent.Agent, env: balloon_env.BalloonEnv,
       if is_done:
         out_of_power = info.get('out_of_power', False)
         envelope_burst = info.get('envelope_burst', False)
-        no_superpressure = info.get('no_superpressure', False)
+        zeropressure = info.get('zeropressure', False)
         break
 
     twr = steps_within_radius / step_count
@@ -174,7 +174,7 @@ def eval_agent(agent: base_agent.Agent, env: balloon_env.BalloonEnv,
         time_within_radius=twr,
         out_of_power=out_of_power,
         envelope_burst=envelope_burst,
-        no_superpressure=no_superpressure,
+        zeropressure=zeropressure,
         final_timestep=step_count,
         flight_path=flight_path)
 
