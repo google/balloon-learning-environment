@@ -238,10 +238,10 @@ class BalloonState(object):
 
   @property
   def navigation_is_paused(self) -> bool:
-    # TODO(joshgreaves): What counts as paused? Not allowing descending?
-    return (self.power_safety_layer.navigation_is_paused or
-            self.envelope_safety_layer.navigation_is_paused or
-            self.altitude_safety_layer.navigation_is_paused)
+    # Navigation is paused when the balloon is not allowed to descend.
+    return (self.power_safety_layer.navigation_is_paused
+            or self.envelope_safety_layer.navigation_is_paused
+            or self.altitude_safety_layer.navigation_is_paused)
 
   @property
   def pressure_ratio(self) -> float:

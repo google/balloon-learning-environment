@@ -23,7 +23,6 @@ from balloon_learning_environment.utils import units
 import s2sphere as s2
 
 
-# TODO(joshgreaves): Why not allow ascend when navigation is paused?
 class PowerSafetyLayer():
   """A safety layer that prevents balloons from running out of power.
 
@@ -41,6 +40,14 @@ class PowerSafetyLayer():
     self._sunrise, self._sunset = solar.get_next_sunrise_sunset(
         latlng, date_time)
     self.navigation_is_paused = False
+
+    self._soc_min = 0.025  # Don't let the battery SOC fall below this.
+    self._soc_restart = 0.05  # Resume control when SOC is more than this.
+    self._time_hysteresis = dt.timedelta(minutes=30)
+    # Rather than timing everything to sunrise, we time it to 30 minutes
+    # after sunrise, to ensure that the sun ☀️ has risen enough to shine on
+    # the solar panels.
+    self._sunrise_with_hysteresis = self._sunrise + self._time_hysteresis
 
   def get_action(
       self,
@@ -73,12 +80,18 @@ class PowerSafetyLayer():
     # We also update the sunrise/sunset time naively, since it is a reasonable
     # approximation within a few minutes for episode lengths that are only
     # several days long.
-    while date_time > self._sunrise:
-      self._sunrise += dt.timedelta(days=1)
+    while date_time > self._sunrise_with_hysteresis:
+      self._sunrise_with_hysteresis += dt.timedelta(days=1)
     while date_time > self._sunset:
       self._sunset += dt.timedelta(days=1)
 
-    if self._sunset < self._sunrise:
+    if self._sunset < self._sunrise_with_hysteresis:
+      # If it is daytime but the battery charge is still very low, do not
+      # resume control until the battery has more charge.
+      soc = battery_charge / battery_capacity
+      if self.navigation_is_paused and soc < self._soc_restart:
+        return self.get_paused_action(action)
+
       # It is daytime 🌞. For the system we are modeling, we don't need to
       # worry about power until night falls. However, this may be an issue
       # if the flight system changes or balloons are being flown at
@@ -88,20 +101,26 @@ class PowerSafetyLayer():
 
     # Everything after here is nighttime 🌝.
     if self.navigation_is_paused:  # We've already decided to pause control.
-      return control.AltitudeControlCommand.STAY
+      return self.get_paused_action(action)
 
     # Decide whether we should pause control now.
     night_power = nighttime_power_load
-    time_to_sunrise = self._sunrise - date_time
+    time_to_sunrise = self._sunrise_with_hysteresis - date_time
     floating_charge = night_power * time_to_sunrise
 
-    # TODO(joshgreaves): Maybe use a function of nighttime hotel load
-    # instead of a percentage of capacity.
-    expected_remaining_normalized_charge = (battery_charge -
-                                            floating_charge) / battery_capacity
-    if expected_remaining_normalized_charge < 0.05:
+    expected_remaining_normalized_charge = (
+        (battery_charge - floating_charge) / battery_capacity)
+    if expected_remaining_normalized_charge < self._soc_min:
       self.navigation_is_paused = True
-      return control.AltitudeControlCommand.STAY
+      return self.get_paused_action(action)
 
     # It's nighttime, but we aren't in danger of running out of power.
+    return action
+
+  @staticmethod
+  def get_paused_action(
+      action: control.AltitudeControlCommand) -> control.AltitudeControlCommand:
+    # Down uses more power than up or stay, so we cannot allow it.
+    if action == control.AltitudeControlCommand.DOWN:
+      return control.AltitudeControlCommand.STAY
     return action

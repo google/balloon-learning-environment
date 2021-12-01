@@ -73,19 +73,20 @@ class PowerSafetyTest(parameterized.TestCase):
     safety_layer2 = power_safety.PowerSafetyLayer(
         s2.LatLng.from_degrees(0.0, 0.0), date_time)
 
-    # Use round numbers to see when we will fall below 5% charge by sunrise.
-    # After 5 hours (sunrise) we will have battery_charge - 5 watt_hours charge.
+    # Use round numbers to see when we will fall below 2.5% charge by sunrise.
+    # After 5 hours 30 mins (sunrise + hysteresis) we will have
+    # battery_charge - 5.5 watt_hours charge.
     action1 = safety_layer1.get_action(
         control.AltitudeControlCommand.DOWN,
         date_time,
         nighttime_power_load=units.Power(watts=1.0),
-        battery_charge=units.Energy(watt_hours=9.9),
+        battery_charge=units.Energy(watt_hours=7.9),
         battery_capacity=units.Energy(watt_hours=100.0))
     action2 = safety_layer2.get_action(
         control.AltitudeControlCommand.DOWN,
         date_time,
         nighttime_power_load=units.Power(watts=1.0),
-        battery_charge=units.Energy(watt_hours=10.1),
+        battery_charge=units.Energy(watt_hours=8.1),
         battery_capacity=units.Energy(watt_hours=100.0))
 
     self.assertEqual(action1, control.AltitudeControlCommand.STAY)
@@ -106,7 +107,14 @@ class PowerSafetyTest(parameterized.TestCase):
         effective_action = power_safety_layer.get_action(
             action, b.state.date_time, b.state.nighttime_power_load,
             b.state.battery_charge, b.state.battery_capacity)
-        self.assertEqual(effective_action, control.AltitudeControlCommand.STAY)
+
+        # Safety layer only prevents balloons from going down.
+        if action == control.AltitudeControlCommand.DOWN:
+          expected_action = control.AltitudeControlCommand.STAY
+        else:
+          expected_action = action
+
+        self.assertEqual(effective_action, expected_action)
 
 
 if __name__ == '__main__':
