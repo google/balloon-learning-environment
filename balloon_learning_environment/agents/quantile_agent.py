@@ -33,17 +33,23 @@ import jax.numpy as jnp
 import numpy as np
 
 
-@gin.configurable
+@gin.configurable(allowlist=['network',
+                             'exploration_wrapper_constructor',
+                             'checkpoint_duration',
+                             'reload_perciatelli'])
 class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
   """A wrapper for training the Dopamine QR-DQN agent."""
 
   def __init__(
-      self, num_actions: int, observation_shape: Sequence[int],
+      self,
+      num_actions: int,
+      observation_shape: Sequence[int],
+      *,  # Everything after this is a keyword-only argument.
+      seed: Optional[int] = None,
       network: nn.Module = gin.REQUIRED,
       exploration_wrapper_constructor: Callable[
           [int, Sequence[int]], exploration.Exploration] = gin.REQUIRED,
-      seed: Optional[int] = None,
-      checkpoint_duration: Optional[int] = 5,
+      checkpoint_duration: Optional[int] = gin.REQUIRED,
       reload_perciatelli: bool = gin.REQUIRED):
     """Create the Agent.
 
@@ -54,9 +60,9 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
     Args:
       num_actions: Number of actions.
       observation_shape: Shape of input observations.
+      seed: Optional seed for the PRNG.
       network: Network to use for training and inference.
       exploration_wrapper_constructor: Exploration wrapper for action selection.
-      seed: Optional seed for the PRNG.
       checkpoint_duration: Optional duration of checkpoints for garbage
         collection.
       reload_perciatelli: Whether to reload the weights from the Perciatelli44

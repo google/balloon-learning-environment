@@ -5,6 +5,7 @@ import balloon_learning_environment.agents.networks
 import dopamine.replay_memory.circular_replay_buffer
 
 balloon_learning_environment.agents.dqn_agent.DQNAgent.network = @networks.MLPNetwork
+balloon_learning_environment.agents.dqn_agent.DQNAgent.checkpoint_duration = 5
 networks.MLPNetwork.num_layers = 8
 networks.MLPNetwork.hidden_units = 256
 JaxDQNAgent.gamma = 0.9

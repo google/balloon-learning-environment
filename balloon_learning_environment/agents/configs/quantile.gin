@@ -11,6 +11,7 @@ import dopamine.replay_memory.prioritized_replay_buffer
 QuantileAgent.network = @agents.networks.QuantileNetwork
 QuantileAgent.exploration_wrapper_constructor = @marco_polo_exploration.MarcoPoloExploration
 QuantileAgent.reload_perciatelli = False
+QuantileAgent.checkpoint_duration = 5
 MarcoPoloExploration.exploratory_episode_probability = 0.8
 MarcoPoloExploration.exploratory_agent_constructor = @random_walk_agent.RandomWalkAgent
 agents.networks.QuantileNetwork.num_layers = 8

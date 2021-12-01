@@ -90,7 +90,7 @@ def run_training_loop(
 
     # The environment has no timeout, so terminal really is a terminal state.
     agent.end_episode(r, terminal)
-    # Poossibly checkpoint the agent.
+    # Possibly checkpoint the agent.
     agent.save_checkpoint(checkpoint_dir, episode)
     # TODO(joshgreaves): Fix dispatcher logging the same data twice on terminal.
     dispatcher.end_episode(statistics_instance.StatisticsInstance(

@@ -28,21 +28,24 @@ import jax.numpy as jnp
 import numpy as np
 
 
-@gin.configurable
+@gin.configurable(allowlist=['network', 'checkpoint_duration'])
 class DQNAgent(agent.Agent, dqn_agent.JaxDQNAgent):
   """A wrapper for training the Dopamine DQN agent."""
 
-  def __init__(self, num_actions: int, observation_shape: Sequence[int],
-               network: nn.Module = gin.REQUIRED,
+  def __init__(self,
+               num_actions: int,
+               observation_shape: Sequence[int],
+               *,  # Everything after this is a keyword-only argument.
                seed: Optional[int] = None,
-               checkpoint_duration: Optional[int] = 5):
+               network: nn.Module = gin.REQUIRED,
+               checkpoint_duration: Optional[int] = gin.REQUIRED):
     """Create the DQN Agent.
 
     Args:
       num_actions: Number of actions.
       observation_shape: Shape of input observations.
-      network: Network to use for training and inference.
       seed: Optional seed for the PRNG.
+      network: Network to use for training and inference.
       checkpoint_duration: Optional duration of checkpoints for garbage
         collection.
     """
