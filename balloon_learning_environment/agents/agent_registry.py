@@ -43,6 +43,8 @@ REGISTRY = {
     'dqn': (dqn_agent.DQNAgent, f'{BASE_DIR}/dqn.gin'),
     'perciatelli44': (perciatelli44.Perciatelli44, None),
     'quantile': (quantile_agent.QuantileAgent, f'{BASE_DIR}/quantile.gin'),
+    'finetune_perciatelli': (quantile_agent.QuantileAgent,
+                             f'{BASE_DIR}/finetune_perciatelli.gin'),
     'station_seeker': (station_seeker_agent.StationSeekerAgent, None),
     'random_walk': (random_walk_agent.RandomWalkAgent, None),
 }

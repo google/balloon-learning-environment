@@ -29,6 +29,16 @@ flags.DEFINE_string(
 FLAGS = flags.FLAGS
 
 
+def load_perciatelli_session() -> tf.compat.v1.Session:
+  sess = tf.compat.v1.Session()
+  with tf.io.gfile.GFile(FLAGS.perciatelli_pb_path, 'rb') as f:
+    graph_def = tf.compat.v1.GraphDef()
+    graph_def.ParseFromString(f.read())
+
+  tf.compat.v1.import_graph_def(graph_def)
+  return sess
+
+
 class Perciatelli44(agent.Agent):
   """Perciatelli44 Agent.
 
@@ -53,12 +63,7 @@ class Perciatelli44(agent.Agent):
     # for loading the Perciatelli graph.
     # TODO(joshgreaves): We wanted to avoid a dependency on TF, but adding
     # this to the agent registry makes TF a necessity.
-    self._sess = tf.compat.v1.Session()
-    with tf.compat.v1.gfile.GFile(FLAGS.perciatelli_pb_path, 'rb') as f:
-      graph_def = tf.compat.v1.GraphDef()
-      graph_def.ParseFromString(f.read())
-
-    tf.compat.v1.import_graph_def(graph_def)
+    self._sess = load_perciatelli_session()
     self._action = self._sess.graph.get_tensor_by_name('sleepwalk_action:0')
     self._q_vals = self._sess.graph.get_tensor_by_name('q_values:0')
     self._observation = self._sess.graph.get_tensor_by_name('observation:0')

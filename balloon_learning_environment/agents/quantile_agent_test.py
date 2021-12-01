@@ -28,6 +28,7 @@ from balloon_learning_environment.agents import agent_registry
 from balloon_learning_environment.agents import exploration
 from balloon_learning_environment.agents import quantile_agent
 from dopamine.jax.agents.quantile import quantile_agent as base_quantile_agent
+import flax
 import gin
 import jax.numpy as jnp
 import numpy as np
@@ -66,6 +67,14 @@ class QuantileAgentTest(parameterized.TestCase):
     # Override layers=1 for speed, and num_atoms=200 for historical reasons.
     gin.bind_parameter('agents.networks.QuantileNetwork.num_layers', 1)
     gin.bind_parameter('JaxQuantileAgent.num_atoms', 200)
+
+  def test_load_perciatelli_weights(self):
+    params = quantile_agent.QuantileAgent.load_perciatelli_weights()
+    self.assertIsInstance(params, flax.core.FrozenDict)
+    self.assertIn('params', params)
+    # We expect 8 layers.
+    for i in range(8):
+      self.assertIn(f'Dense_{i}', params['params'])
 
   def test_agent_defaults(self):
     agent = quantile_agent.QuantileAgent(self._num_actions,

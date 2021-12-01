@@ -23,9 +23,12 @@ from balloon_learning_environment.agents import agent
 from balloon_learning_environment.agents import dopamine_utils
 from balloon_learning_environment.agents import exploration
 from balloon_learning_environment.agents import marco_polo_exploration  # pylint: disable=unused-import
+from balloon_learning_environment.agents import perciatelli44
 from dopamine.jax.agents.quantile import quantile_agent
+import flax
 from flax import linen as nn
 import gin
+import jax
 import jax.numpy as jnp
 import numpy as np
 
@@ -40,7 +43,8 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
       exploration_wrapper_constructor: Callable[
           [int, Sequence[int]], exploration.Exploration] = gin.REQUIRED,
       seed: Optional[int] = None,
-      checkpoint_duration: Optional[int] = 5):
+      checkpoint_duration: Optional[int] = 5,
+      reload_perciatelli: bool = gin.REQUIRED):
     """Create the Agent.
 
     This agent enables one to wrap action selection with another agent, such
@@ -55,6 +59,8 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
       seed: Optional seed for the PRNG.
       checkpoint_duration: Optional duration of checkpoints for garbage
         collection.
+      reload_perciatelli: Whether to reload the weights from the Perciatelli44
+        agent.
     """
     self._checkpoint_duration = checkpoint_duration
     # Although Python MRO goes from left to right, we call each __init__
@@ -71,6 +77,10 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
         seed=seed)
     self._exploration_wrapper = exploration_wrapper_constructor(
         num_actions, observation_shape)
+    if reload_perciatelli:
+      self.online_params = self.load_perciatelli_weights()
+      self.target_network_params = self.online_params
+      logging.info('Successfully loaded Perciatelli44 parameters.')
 
   def begin_episode(self, observation: np.ndarray) -> int:
     # Note(psc): We need to set `self.action` explicitly here (whether the
@@ -182,3 +192,57 @@ class QuantileAgent(agent.Agent, quantile_agent.JaxQuantileAgent):
     except ValueError:
       logging.warning('Unable to reload checkpoint at %s', checkpoint_dir)
       return -1
+
+  @staticmethod
+  def load_perciatelli_weights() -> flax.core.FrozenDict:
+    """Load the Perciatelli weights and convert to a JAX array."""
+    sess = perciatelli44.load_perciatelli_session()
+    layer_names = [n.name
+                   for n in sess.graph.as_graph_def().node
+                   if 'Online' in n.name]
+
+    param_dict = {}
+    for name in layer_names:
+      if not ('weights' in name or 'biases' in name) or 'read' in name:
+        continue
+
+      params = sess.run(sess.graph.get_tensor_by_name(f'{name}:0'))
+      param_dict[name] = params
+    jax_params = {
+        'params': {
+            'Dense_0': {
+                'kernel': param_dict['Online/fully_connected/weights'],
+                'bias': param_dict['Online/fully_connected/biases'],
+            },
+            'Dense_1': {
+                'kernel': param_dict['Online/fully_connected_1/weights'],
+                'bias': param_dict['Online/fully_connected_1/biases'],
+            },
+            'Dense_2': {
+                'kernel': param_dict['Online/fully_connected_2/weights'],
+                'bias': param_dict['Online/fully_connected_2/biases'],
+            },
+            'Dense_3': {
+                'kernel': param_dict['Online/fully_connected_3/weights'],
+                'bias': param_dict['Online/fully_connected_3/biases'],
+            },
+            'Dense_4': {
+                'kernel': param_dict['Online/fully_connected_4/weights'],
+                'bias': param_dict['Online/fully_connected_4/biases'],
+            },
+            'Dense_5': {
+                'kernel': param_dict['Online/fully_connected_5/weights'],
+                'bias': param_dict['Online/fully_connected_5/biases'],
+            },
+            'Dense_6': {
+                'kernel': param_dict['Online/fully_connected_6/weights'],
+                'bias': param_dict['Online/fully_connected_6/biases'],
+            },
+            'Dense_7': {
+                'kernel': param_dict['Online/fully_connected_7/weights'],
+                'bias': param_dict['Online/fully_connected_7/biases'],
+            },
+        }
+    }
+    jax_params = jax.tree_map(jnp.asarray, jax_params)
+    return flax.core.FrozenDict(jax_params)

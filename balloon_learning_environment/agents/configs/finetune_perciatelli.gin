@@ -1,5 +1,6 @@
 # Hyperparameters for a Quantile-style agent that uses MarcoPolo exploration.
-# This is the same configuration used in our Nature paper.
+# This is the same configuration used in our Nature paper, and further
+# starts from the trained parameters used in the Nature paper.
 import dopamine.jax.agents.dqn.dqn_agent
 import dopamine.jax.agents.quantile.quantile_agent
 import balloon_learning_environment.agents.marco_polo_exploration
@@ -10,7 +11,7 @@ import dopamine.replay_memory.prioritized_replay_buffer
 
 QuantileAgent.network = @agents.networks.QuantileNetwork
 QuantileAgent.exploration_wrapper_constructor = @marco_polo_exploration.MarcoPoloExploration
-QuantileAgent.reload_perciatelli = False
+QuantileAgent.reload_perciatelli = True
 MarcoPoloExploration.exploratory_episode_probability = 0.8
 MarcoPoloExploration.exploratory_agent_constructor = @random_walk_agent.RandomWalkAgent
 agents.networks.QuantileNetwork.num_layers = 8

@@ -47,8 +47,24 @@ You can train one of these with the following command:
 ```
 python -m balloon_learning_environment.train \
   --base_dir=/tmp/ble/train \
-  --agent=quantile
+  --agent=finetune_perciatelli
 ```
+
+The following are the most useful agents to get started:
+
+*  `station_seeker`: A static controller designed by Loon which has a decent
+   performance, and was the baseline against which we compared in our
+   [Nature paper](https://www.nature.com/articles/s41586-020-2939-8)
+*  `perciatelli44`: The agent we trained for our
+   [Nature paper](https://www.nature.com/articles/s41586-020-2939-8).
+   It's a frozen agent (so does not do any extra training) but performs quite
+    well.
+*  `quantile`: A Quantile-based agent in JAX that uses the same
+   architecture as Perciatelli44, but starts training from a fresh
+   initialization.
+*  `finetune_perciatelli`: The same as `quantile`, but reloads the
+   `perciatelli44` weights, and is a great way to warm-start agent training.
+
 
 ## Evaluating an Agent
 
