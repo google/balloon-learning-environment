@@ -23,9 +23,13 @@ from typing import Sequence
 
 from absl import app
 from absl import flags
+from balloon_learning_environment.env import balloon_env  # pylint: disable=unused-import
+from balloon_learning_environment.env import generative_wind_field
+from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.eval import eval_lib
 from balloon_learning_environment.eval import suites
 from balloon_learning_environment.utils import run_helpers
+import gym
 
 
 flags.DEFINE_string('agent', 'dqn', 'The name of the agent to create.')
@@ -33,9 +37,8 @@ flags.DEFINE_enum('suite', 'big_eval',
                   suites.available_suites(),
                   'The evaluation suite to run.')
 flags.DEFINE_string(
-    'environment_gin_file',
-    'balloon_learning_environment/env/configs/default_env_config.gin',
-    'Gin file for environment configuration.')
+    'wind_field', 'generative',
+    'The windfield type to use. See the _WIND_FIELDS dict below for options.')
 flags.DEFINE_string('agent_gin_file', None, 'Gin file for agent configuration.')
 flags.DEFINE_multi_string('gin_bindings', [],
                           'Gin bindings to override default values.')
@@ -57,6 +60,12 @@ flags.DEFINE_string(
     'name_override', None,
     'If supplied, this will be the name used for the json output file.')
 FLAGS = flags.FLAGS
+
+
+_WIND_FIELDS = {
+    'generative': generative_wind_field.GenerativeWindField,
+    'simple': wind_field.SimpleStaticWindField,
+}
 
 
 def write_result(result: Sequence[eval_lib.EvaluationResult]) -> None:
@@ -87,10 +96,14 @@ def main(argv: Sequence[str]) -> None:
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
 
-  run_helpers.bind_gin_variables(FLAGS.agent, FLAGS.agent_gin_file,
-                                 FLAGS.environment_gin_file, FLAGS.gin_bindings)
+  run_helpers.bind_gin_variables(FLAGS.agent,
+                                 FLAGS.agent_gin_file,
+                                 FLAGS.gin_bindings)
 
-  env = run_helpers.create_environment('BalloonLearningEnvironment-v0')
+  wf = _WIND_FIELDS[FLAGS.wind_field]
+  env = gym.make('BalloonLearningEnvironment-v0',
+                 wind_field_factory=wf)
+
   agent = run_helpers.create_agent(
       FLAGS.agent,
       env.action_space.n,

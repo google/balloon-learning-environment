@@ -19,13 +19,7 @@ from typing import Optional, Sequence
 
 from balloon_learning_environment.agents import agent as base_agent
 from balloon_learning_environment.agents import agent_registry
-from balloon_learning_environment.env import balloon_env
 import gin
-import gym
-
-
-def create_environment(name: str) -> balloon_env.BalloonEnv:
-  return gym.make(name)
 
 
 def get_agent_gin_file(agent_name: str,
@@ -56,7 +50,6 @@ def create_agent(agent_name: str, num_actions: int,
 def bind_gin_variables(
     agent: str,
     agent_gin_file: Optional[str] = None,
-    environment_gin_file: Optional[str] = None,
     gin_bindings: Sequence[str] = (),
     additional_gin_files: Sequence[str] = ()
 ) -> None:
@@ -66,17 +59,12 @@ def bind_gin_variables(
     agent: The agent being used in the experiment.
     agent_gin_file: An optional path to a gin file to override the agent's
       default gin file.
-    environment_gin_file: An optional path to a gin file for the environment
-      configuration.
     gin_bindings: An optional list of gin bindings passed in on the command
       line.
     additional_gin_files: Any other additional paths to gin files that should be
       parsed and bound.
   """
   gin_files = []
-
-  if environment_gin_file:
-    gin_files.append(environment_gin_file)
 
   agent_gin_file = get_agent_gin_file(agent, agent_gin_file)
   if agent_gin_file is not None:

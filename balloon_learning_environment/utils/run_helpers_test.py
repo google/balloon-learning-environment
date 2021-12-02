@@ -34,13 +34,6 @@ class RunHelpersTest(absltest.TestCase):
     super().setUp()
     self.gin_file = 'gin_file'
 
-  def test_create_environment(self):
-    test_helpers.bind_environment_gin_parameters(seed=0)
-    with self.assertRaises(gym.error.Error):
-      _ = run_helpers.create_environment('invalid_env')
-    env = run_helpers.create_environment('BalloonLearningEnvironment-v0')
-    self.assertIsInstance(env, balloon_env.BalloonEnv)
-
   def test_unrecognized_agent(self):
     # An unrecognized agent will raise an error.
     with self.assertRaises(ValueError):
@@ -94,16 +87,6 @@ class RunHelpersTest(absltest.TestCase):
                                            skip_unknown=False)
 
   @mock.patch.object(gin, 'parse_config_files_and_bindings', autospec=True)
-  def test_bind_gin_variables_binds_environment_gin_file_correctly(
-      self, mock_parse_function):
-    run_helpers.bind_gin_variables('random', environment_gin_file=self.gin_file)
-
-    # Random agent doesn't have a gin file, so the only one is for the env.
-    mock_parse_function.assert_called_with([self.gin_file],
-                                           bindings=(),
-                                           skip_unknown=False)
-
-  @mock.patch.object(gin, 'parse_config_files_and_bindings', autospec=True)
   def test_bind_gin_variables_adds_gin_bindings_correctly(
       self, mock_parse_function):
     fake_bindings = ['binding1', 'binding2']
@@ -119,11 +102,10 @@ class RunHelpersTest(absltest.TestCase):
     extra_gin_file = 'extra_gin_file'
     run_helpers.bind_gin_variables(
         'dqn',
-        environment_gin_file=self.gin_file,
         additional_gin_files=[extra_gin_file])
 
     mock_parse_function.assert_called_with(
-        [self.gin_file, _DQN_GIN_FILE, extra_gin_file],
+        [_DQN_GIN_FILE, extra_gin_file],
         bindings=(),
         skip_unknown=False)
 

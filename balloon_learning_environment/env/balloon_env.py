@@ -53,16 +53,17 @@ class BalloonEnv(gym.Env):
   def __init__(
       self,
       *,  # All arguments after this are keyword-only.
-      station_keeping_radius_km: float = gin.REQUIRED,
-      reward_dropoff: float = gin.REQUIRED,
-      reward_halflife: float = gin.REQUIRED,
-      arena: Optional[balloon_arena.BalloonArenaInterface] = gin.REQUIRED,
+      station_keeping_radius_km: float = 50.0,
+      reward_dropoff: float = 0.4,
+      reward_halflife: float = 100.0,
+      arena: Optional[balloon_arena.BalloonArenaInterface] = None,
       feature_constructor_factory: Callable[
           [wind_field.WindField, standard_atmosphere.Atmosphere],
-          features.FeatureConstructor] = gin.REQUIRED,
-      wind_field_factory: Callable[[], wind_field.WindField] = gin.REQUIRED,
-      seed: Optional[int] = gin.REQUIRED,
-      renderer: Optional[randerer_lib.Renderer] = gin.REQUIRED):
+          features.FeatureConstructor] = features.PerciatelliFeatureConstructor,
+      wind_field_factory: Callable[
+          [], wind_field.WindField] = generative_wind_field.GenerativeWindField,
+      seed: Optional[int] = None,
+      renderer: Optional[randerer_lib.Renderer] = None):
     """Constructs a Balloon Learning Environment Station Keeping Environment.
 
     The reward function for the environment returns 1.0 when the balloon is
