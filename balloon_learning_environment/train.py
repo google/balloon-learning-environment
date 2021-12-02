@@ -31,8 +31,8 @@ flags.DEFINE_string('agent', 'dqn', 'Type of agent to create.')
 flags.DEFINE_string('env_name', 'BalloonLearningEnvironment-v0',
                     'Name of environment to create.')
 flags.DEFINE_integer('num_episodes', 200, 'Number of episodes to train for.')
-flags.DEFINE_integer('max_episode_length', 1440,
-                     'Maximum number of steps per episode. Assuming 3 days, '
+flags.DEFINE_integer('max_episode_length', 960,
+                     'Maximum number of steps per episode. Assuming 2 days, '
                      'with each step lasting 3 minutes.')
 flags.DEFINE_string('base_dir', None,
                     'Directory where to store statistics/images.')
