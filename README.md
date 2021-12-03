@@ -86,3 +86,18 @@ the following BibTeX entry:
 }
 ```
 
+If you use the `ble_wind_field` dataset, you should also cite
+
+```
+Hersbach, H., Bell, B., Berrisford, P., Hirahara, S., Horányi, A.,
+Muñoz‐Sabater, J., Nicolas, J., Peubey, C., Radu, R., Schepers, D., Simmons, A.,
+Soci, C., Abdalla, S., Abellan, X., Balsamo, G., Bechtold, P., Biavati, G.,
+Bidlot, J., Bonavita, M., De Chiara, G., Dahlgren, P., Dee, D., Diamantakis, M.,
+Dragani, R., Flemming, J., Forbes, R., Fuentes, M., Geer, A., Haimberger, L.,
+Healy, S., Hogan, R.J., Hólm, E., Janisková, M., Keeley, S., Laloyaux, P.,
+Lopez, P., Lupu, C., Radnoti, G., de Rosnay, P., Rozum, I., Vamborg, F.,
+Villaume, S., Thépaut, J-N. (2017): Complete ERA5: Fifth generation of ECMWF
+atmospheric reanalyses of the global climate. Copernicus Climate Change Service
+(C3S) Data Store (CDS). (Accessed on 01-04-2021)
+```
+
