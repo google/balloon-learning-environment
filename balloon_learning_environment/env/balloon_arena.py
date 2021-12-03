@@ -211,13 +211,15 @@ class BalloonArena(BalloonArenaInterface):
 
   def get_simulator_state(self) -> simulator_data.SimulatorState:
     return simulator_data.SimulatorState(self.get_balloon_state(),
-                                         self._wind_field)
+                                         self._wind_field,
+                                         self._atmosphere)
 
   def set_simulator_state(self,
                           new_state: simulator_data.SimulatorState) -> None:
     # TODO(joshgreaves): Restore the state of the feature constructor.
     self.set_balloon_state(new_state.balloon_state)
     self._wind_field = new_state.wind_field
+    self._atmosphere = new_state.atmosphere
 
   def get_balloon_state(self) -> balloon.BalloonState:
     return self._balloon.state

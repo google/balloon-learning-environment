@@ -68,6 +68,9 @@ class TrainLibTest(absltest.TestCase):
         del summary_writer
         pass
 
+      def render(self):
+        pass
+
     # To test collection is happening as expected, we use a mock collector.
     steps = []
     actions = []

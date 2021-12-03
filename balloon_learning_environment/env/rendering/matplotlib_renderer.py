@@ -23,34 +23,58 @@ from typing import Iterable, Optional, Text, Union
 from balloon_learning_environment.env import simulator_data
 from balloon_learning_environment.env.rendering import renderer
 from flax.metrics import tensorboard
+from matplotlib import dates as mdates
+from matplotlib import gridspec
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d  # pylint: disable=unused-import
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from mpl_toolkits.mplot3d import art3d
 import numpy as np
 
 
-# TODO(joshgreaves): Add style configurations.
 class MatplotlibRenderer(renderer.Renderer):
   """Contains functions for rendering the simulator state with matplotlib."""
 
   def __init__(self):
     self.reset()
 
+    self._x_lims = (-150.0, 150.0)  # km
+    self._y_lims = (-150.0, 150.0)  # km
+    self._altitude_lims = (15, 20)  # km
+    self._target_x = 0.0
+    self._target_y = 0.0
+    self._target_radius = 50.0  # TODO(joshgreaves): Get this from the env.
+
+    self._fig = plt.figure(figsize=(15, 10))
+    spec = gridspec.GridSpec(ncols=1,
+                             nrows=1,
+                             height_ratios=[1])
+    self._axes = [self._fig.add_subplot(spec[0], projection='3d')]
+    self._axes.append(
+        inset_axes(self._axes[0],
+                   width='50.0%',
+                   height='10.0%',
+                   loc='upper right'))
+    self._axes.append(
+        inset_axes(self._axes[0],
+                   width='37.5%',
+                   height='37.5%',
+                   loc='upper left'))
+
   def reset(self) -> None:
-    plt.close('all')
-    self.fig = plt.figure(figsize=(8, 6))
-    self.ax = self.fig.add_subplot(1, 1, 1, projection='3d')
     self._trajectory = list()
-    self.hour = 0
-    self.charge = 0
+    self._charge = list()
+    self._datetime = list()
 
   def step(self, state: simulator_data.SimulatorState) -> None:
     balloon_state = state.balloon_state
-    self.hour = balloon_state.date_time.hour
-    self.charge = balloon_state.battery_soc
+    altitude = state.atmosphere.at_pressure(balloon_state.pressure).height
+    self._charge.append(balloon_state.battery_soc * 100.0)
+    self._datetime.append(balloon_state.date_time)
     self._trajectory.append(
-        np.asarray([balloon_state.x.meters, balloon_state.y.meters,
-                    balloon_state.pressure]))
+        np.asarray([balloon_state.x.kilometers,
+                    balloon_state.y.kilometers,
+                    altitude.kilometers]))
 
   def render(self,
              mode: Text,
@@ -73,17 +97,21 @@ class MatplotlibRenderer(renderer.Renderer):
       raise ValueError('Unsupported render mode {}. Use one of {}.'.format(
           mode, self.render_modes))
 
-    plt.cla()
-    self._plot_data()
+    for ax in self._axes:
+      ax.clear()
+    flight_path = np.vstack(self._trajectory)
+    self._plot_3d_flight_path(flight_path)
+    self._plot_inset(flight_path)
+    self._plot_power()
 
     if mode == 'human':
-      self.fig.show()
+      plt.pause(0.001)  # Renders the image and runs the GUI loop.
     elif mode == 'rgb_array' or mode == 'tensorboard':
-      self.fig.canvas.draw()
-      rgb_string = self.fig.canvas.tostring_rgb()
-      width, height = self.fig.canvas.get_width_height()
-      frame = np.fromstring(
-          rgb_string, dtype=np.uint8, sep='').reshape(height, width, -1)
+      self._fig.canvas.draw()
+      rgb_string = self._fig.canvas.tostring_rgb()
+      width, height = self._fig.canvas.get_width_height()
+      frame = np.frombuffer(
+          rgb_string, dtype=np.uint8).reshape(height, width, -1)
       if mode == 'rgb_array':
         return frame
 
@@ -96,39 +124,84 @@ class MatplotlibRenderer(renderer.Renderer):
   def render_modes(self) -> Iterable[Text]:
     return ['human', 'rgb_array', 'tensorboard']
 
-  def _plot_data(self):
+  def _plot_3d_flight_path(self, flight_path: np.ndarray):
+    ax = self._axes[0]
 
     # TODO(joshgreaves): Longitude/Latitude isn't quite right
-    self.ax.set_xlabel('Longitude displacement (km)')
-    self.ax.set_ylabel('Latitude displacement (km)')
-    self.ax.set_zlabel('Pressure (kPa)')
-    self.ax.invert_zaxis()
+    ax.set_xlabel('Longitude displacement (km)')
+    ax.set_ylabel('Latitude displacement (km)')
+    ax.set_zlabel('Altitude (km)')
 
-    data = np.vstack(self._trajectory)
-    data /= 1000.0  # m -> km, Pa -> kPa
+    ax.set_xlim(self._x_lims)
+    ax.set_ylim(self._y_lims)
+    ax.set_zlim(self._altitude_lims)
+    ax.set_facecolor('white')
+    ax.xaxis.pane.set_edgecolor('black')
+    ax.yaxis.pane.set_edgecolor('black')
+    ax.grid(True)
 
-    self.ax.plot3D(data[:, 0], data[:, 1], data[:, 2], c='k')
+    # Draw the target radius.
+    ax.scatter3D(
+        self._target_x,
+        self._target_y,
+        self._altitude_lims[0],
+        c='k',
+        lw=1.0,
+        marker='x',
+        s=100)
+    circle = plt.Circle((self._target_x, self._target_y),
+                        self._target_radius,
+                        edgecolor='k',
+                        ls='--',
+                        fill=False)
+    ax.add_patch(circle)
+    art3d.pathpatch_2d_to_3d(circle, z=self._altitude_lims[0], zdir='z')
 
-    # Draw target areas
-    lower_circle = plt.Circle((0.0, 0.0), 50.0, edgecolor='k', ls='--',
-                              fill=True, facecolor='blue', zorder=-1, alpha=0.3)
-    self.ax.add_patch(lower_circle)
-    lower_circle_z = np.max(data[:, 2])
-    art3d.pathpatch_2d_to_3d(lower_circle, z=lower_circle_z, zdir='z')
-    higher_circle = plt.Circle((0.0, 0.0), 50.0, edgecolor='k', ls='--',
-                               fill=True, facecolor='blue', zorder=-1,
-                               alpha=0.3)
-    self.ax.add_patch(higher_circle)
-    upper_circle_z = np.min(data[:, 2])
-    art3d.pathpatch_2d_to_3d(higher_circle, z=upper_circle_z, zdir='z')
-    # Draw cylinder for target.
-    cylinder_x = np.linspace(-50.0, 50.0, 100)
-    cylinder_z = np.linspace(lower_circle_z, upper_circle_z, 100)
-    mesh_x, mesh_z = np.meshgrid(cylinder_x, cylinder_z)
-    mesh_y = np.sqrt(2500 - mesh_x**2)
-    self.ax.plot_surface(mesh_x, mesh_y, mesh_z, alpha=0.2, rstride=20,
-                         cstride=10)
-    self.ax.plot_surface(mesh_x, -mesh_y, mesh_z, alpha=0.2, rstride=20,
-                         cstride=10, color='blue')
-    self.ax.set_title(f'Hour: {self.hour}, Charge: {self.charge:.2f}',
-                      fontsize=32)
+    # Draw the trajectory
+    ax.plot3D(flight_path[:, 0],
+              flight_path[:, 1],
+              flight_path[:, 2], c='C0')
+    ax.scatter3D(
+        flight_path[-1, 0],
+        flight_path[-1, 1],
+        flight_path[-1, 2],
+        color='C0',
+        lw=0.1,
+        marker='o',
+        s=100)
+
+    # Add a stem to the balloon
+    last_x = flight_path[-1, 0]
+    last_y = flight_path[-1, 1]
+    ax.plot3D([last_x, last_x],
+              [last_y, last_y],
+              [self._altitude_lims[0], flight_path[-1, 2]],
+              color='C0')
+
+  def _plot_power(self):
+    ax = self._axes[1]
+
+    ax.set_ylim([0.0, 110])
+    ax.set_xlabel('Time (UTC)')
+    ax.set_ylabel('Power (%)')
+    ax.set_xticks([self._datetime[0], self._datetime[-1]])
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+
+    ax.plot(self._datetime, self._charge, color='C0')
+
+  def _plot_inset(self, flight_path: np.ndarray):
+    ax = self._axes[2]
+
+    ax.set_xlim(self._x_lims)
+    ax.set_ylim(self._y_lims)
+    ax.set_xticks([self._x_lims[0], 0.0, self._x_lims[1]])
+    ax.set_yticks([self._y_lims[0], 0.0, self._y_lims[1]])
+
+    circle = plt.Circle([self._target_x, self._target_y],
+                        self._target_radius,
+                        edgecolor='k',
+                        ls='--',
+                        fill=False)
+    ax.add_patch(circle)
+    ax.plot(flight_path[:, 0], flight_path[:, 1], color='C0')
+    ax.scatter(flight_path[-1, 0], flight_path[-1, 1], color='C0')

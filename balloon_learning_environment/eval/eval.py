@@ -26,6 +26,7 @@ from absl import flags
 from balloon_learning_environment.env import balloon_env  # pylint: disable=unused-import
 from balloon_learning_environment.env import generative_wind_field
 from balloon_learning_environment.env import wind_field
+from balloon_learning_environment.env.rendering import matplotlib_renderer
 from balloon_learning_environment.eval import eval_lib
 from balloon_learning_environment.eval import suites
 from balloon_learning_environment.utils import run_helpers
@@ -59,12 +60,22 @@ flags.DEFINE_integer('checkpoint_idx', None,
 flags.DEFINE_string(
     'name_override', None,
     'If supplied, this will be the name used for the json output file.')
+flags.DEFINE_string(
+    'renderer', None,
+    'The renderer to use. Note that it is fastest to have this set to None.')
+flags.DEFINE_integer(
+    'render_period', 10,
+    'The period to render with. Only has an effect if renderer is not None.')
 FLAGS = flags.FLAGS
 
 
 _WIND_FIELDS = {
     'generative': generative_wind_field.GenerativeWindField,
     'simple': wind_field.SimpleStaticWindField,
+}
+
+_RENDERERS = {
+    'matplotlib': matplotlib_renderer.MatplotlibRenderer,
 }
 
 
@@ -100,9 +111,14 @@ def main(argv: Sequence[str]) -> None:
                                  FLAGS.agent_gin_file,
                                  FLAGS.gin_bindings)
 
+  renderer = None
+  if FLAGS.renderer is not None:
+    renderer = _RENDERERS[FLAGS.renderer]()
+
   wf = _WIND_FIELDS[FLAGS.wind_field]
   env = gym.make('BalloonLearningEnvironment-v0',
-                 wind_field_factory=wf)
+                 wind_field_factory=wf,
+                 renderer=renderer)
 
   agent = run_helpers.create_agent(
       FLAGS.agent,
@@ -118,7 +134,8 @@ def main(argv: Sequence[str]) -> None:
     end = int(len(eval_suite.seeds) * (FLAGS.shard_idx + 1) / FLAGS.num_shards)
     eval_suite.seeds = eval_suite.seeds[start:end]
 
-  eval_result = eval_lib.eval_agent(agent, env, eval_suite)
+  eval_result = eval_lib.eval_agent(agent, env, eval_suite,
+                                    render_period=FLAGS.render_period)
   write_result(eval_result)
 
 

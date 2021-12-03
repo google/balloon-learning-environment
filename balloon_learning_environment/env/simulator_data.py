@@ -19,6 +19,7 @@ import dataclasses
 
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.env.balloon import balloon
+from balloon_learning_environment.env.balloon import standard_atmosphere
 
 
 @dataclasses.dataclass
@@ -30,6 +31,7 @@ class SimulatorState(object):
   """
   balloon_state: balloon.BalloonState
   wind_field: wind_field.WindField
+  atmosphere: standard_atmosphere.Atmosphere
 
 
 @dataclasses.dataclass

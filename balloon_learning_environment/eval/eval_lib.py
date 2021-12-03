@@ -111,8 +111,11 @@ def _balloon_is_within_radius(balloon_state: balloon.BalloonState,
   return units.relative_distance(balloon_state.x, balloon_state.y) <= radius
 
 
-def eval_agent(agent: base_agent.Agent, env: balloon_env.BalloonEnv,
-               eval_suite: EvaluationSuite) -> List[EvaluationResult]:
+def eval_agent(agent: base_agent.Agent,
+               env: balloon_env.BalloonEnv,
+               eval_suite: EvaluationSuite,
+               *,
+               render_period: int = 10) -> List[EvaluationResult]:
   """Evaluates an agent on a given test suite.
 
   If the agent being evaluated is deterministic, the result of this function
@@ -122,6 +125,8 @@ def eval_agent(agent: base_agent.Agent, env: balloon_env.BalloonEnv,
     agent: The agent to evaluate.
     env: The environment to use for evaluation.
     eval_suite: The evaluation suite to evaluate the agent on.
+    render_period: The period with which to render the environment.
+      Only has an effect if the environment as a renderer.
 
   Returns:
     A list of evaluation results, corresponding to the seeds passed in by
@@ -156,6 +161,9 @@ def eval_agent(agent: base_agent.Agent, env: balloon_env.BalloonEnv,
       flight_path.append(copy.deepcopy(balloon_state))
       steps_within_radius += _balloon_is_within_radius(balloon_state,
                                                        env.radius)
+
+      if step_count % render_period == 0:
+        env.render()  # No-op if renderer is None.
 
       step_count += 1
 

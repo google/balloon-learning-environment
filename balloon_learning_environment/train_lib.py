@@ -41,11 +41,15 @@ def get_collector_data(
 
 
 def run_training_loop(
-    base_dir: str, env: balloon_env.BalloonEnv, agent: base_agent.Agent,
-    num_episodes: int, max_episode_length: int,
+    base_dir: str,
+    env: balloon_env.BalloonEnv,
+    agent: base_agent.Agent,
+    num_episodes: int,
+    max_episode_length: int,
     collector_constructors: Sequence[
-        collector_dispatcher.CollectorConstructorType]
-) -> None:
+        collector_dispatcher.CollectorConstructorType],
+    *,
+    render_period: int = 10) -> None:
   """Run a training loop for a specified number of steps."""
   checkpoint_dir = osp.join(base_dir, 'checkpoints')
   # Possibly reload the latest checkpoint, and start from the next episode
@@ -73,6 +77,9 @@ def run_training_loop(
     for i in range(max_episode_length):
       # Pass action to environment.
       obs, r, terminal, _ = env.step(a)
+
+      if i % render_period == 0:
+        env.render()  # No-op if renderer is None.
 
       # Record the current transition.
       dispatcher.step(statistics_instance.StatisticsInstance(
