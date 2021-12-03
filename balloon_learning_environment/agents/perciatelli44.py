@@ -17,21 +17,20 @@
 
 from typing import Sequence
 
-from absl import flags
 from balloon_learning_environment.agents import agent
+import gin
 import numpy as np
 import tensorflow as tf
 
-flags.DEFINE_string(
-    'perciatelli_pb_path',
-    'balloon_learning_environment/models/perciatelli44.pb',
-    'The path to the Perciatelli protobuff.')
-FLAGS = flags.FLAGS
+_PERCIATELLI_PB_PATH = (
+    'balloon_learning_environment/models/perciatelli44.pb')
 
 
-def load_perciatelli_session() -> tf.compat.v1.Session:
+@gin.configurable
+def load_perciatelli_session(
+    pb_path: str = _PERCIATELLI_PB_PATH) -> tf.compat.v1.Session:
   sess = tf.compat.v1.Session()
-  with tf.io.gfile.GFile(FLAGS.perciatelli_pb_path, 'rb') as f:
+  with tf.io.gfile.GFile(pb_path, 'rb') as f:
     graph_def = tf.compat.v1.GraphDef()
     graph_def.ParseFromString(f.read())
 
