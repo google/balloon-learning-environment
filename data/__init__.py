@@ -15,4 +15,4 @@
 
 """Balloon Learning Environment datasets."""
 
-from balloon_learning_environment.data.historical_wind_field import HistoricalWindField
+from balloon_learning_environment.data.ble_wind_field import BLEWindField

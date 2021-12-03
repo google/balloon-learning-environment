@@ -13,23 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for historical_wind_field."""
+"""Tests for ble_wind_field."""
 
 import os
 from unittest import mock
 
-from balloon_learning_environment.data import historical_wind_field
+from balloon_learning_environment.data import ble_wind_field
 import tensorflow_datasets as tfds
 
 
-class HistoricalWindFieldTest(tfds.testing.DatasetBuilderTestCase):
-  DATASET_CLASS = historical_wind_field.HistoricalWindField
+class BLEWindFieldTest(tfds.testing.DatasetBuilderTestCase):
+  DATASET_CLASS = ble_wind_field.BLEWindField
   SPLITS = {'train': 4}
   EXAMPLE_DIR = os.path.join(os.path.dirname(__file__), 'placeholder')
 
   def setUp(self):
     super().setUp()
-    # Patch HistoricalWindField's GCS_URL and GCS_FILENAME class attributes to
+    # Patch BLEWindField's GCS_URL and GCS_FILENAME class attributes to
     # point to the placeholder Zarr array instead.
     module_name = self.DATASET_CLASS.__module__
     class_name = self.DATASET_CLASS.__name__

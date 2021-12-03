@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""Historical wind field dataset.
+r"""Historical wind field dataset for the Balloon Learning Environment.
 
 Downloading and preparation instructions: from this directory, run
 
-tfds build --datasets=historical_wind_field
+tfds build --datasets=ble_wind_field
 """
 
 import concurrent.futures
@@ -44,23 +44,23 @@ _CITATION = """\
 
 
 @dataclasses.dataclass
-class HistoricalWindFieldConfig(tfds.core.BuilderConfig):
+class BLEWindFieldConfig(tfds.core.BuilderConfig):
   num_fields: Optional[int] = None
 
 
-class HistoricalWindField(tfds.core.GeneratorBasedBuilder):
-  """DatasetBuilder for the historical_wind_field dataset."""
+class BLEWindField(tfds.core.GeneratorBasedBuilder):
+  """DatasetBuilder for the ble_wind_field dataset."""
 
   VERSION = tfds.core.Version('1.0.0')
   RELEASE_NOTES = {
       '1.0.0': 'Initial release.',
   }
   BUILDER_CONFIGS = [
-      HistoricalWindFieldConfig(
+      BLEWindFieldConfig(
           name='small',
           description='Small sample of 256 fields from the dataset.',
           num_fields=256),
-      HistoricalWindFieldConfig(
+      BLEWindFieldConfig(
           name='full',
           description='The entire historical wind field dataset.',
           num_fields=None),
