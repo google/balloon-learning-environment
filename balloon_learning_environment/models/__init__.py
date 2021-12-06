@@ -13,28 +13,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Setup file for installing the BLE."""
-import setuptools
-
-setuptools.setup(
-    name='balloon_learning_environment',
-    version='0.0.1',
-    packages=setuptools.find_packages(),
-    install_requires=[
-        'absl-py',
-        'dopamine-rl',
-        'flax',
-        'gin-config',
-        'gym',
-        'opensimplex',
-        's2sphere',
-        'scikit-learn',
-        'tensorflow',
-        'tensorflow-probability',
-        'transitions',
-    ],
-    package_data={
-        '': ['*.msgpack', '*.pb'],
-    },
-    python_requires='>=3.7',
-)
