@@ -18,21 +18,17 @@
 from typing import Sequence
 
 from balloon_learning_environment.agents import agent
-import gin
+from balloon_learning_environment.models import models
 import numpy as np
 import tensorflow as tf
 
-_PERCIATELLI_PB_PATH = (
-    'balloon_learning_environment/models/perciatelli44.pb')
 
+def load_perciatelli_session() -> tf.compat.v1.Session:
+  serialized_perciatelli = models.load_perciatelli44()
 
-@gin.configurable
-def load_perciatelli_session(
-    pb_path: str = _PERCIATELLI_PB_PATH) -> tf.compat.v1.Session:
   sess = tf.compat.v1.Session()
-  with tf.io.gfile.GFile(pb_path, 'rb') as f:
-    graph_def = tf.compat.v1.GraphDef()
-    graph_def.ParseFromString(f.read())
+  graph_def = tf.compat.v1.GraphDef()
+  graph_def.ParseFromString(serialized_perciatelli)
 
   tf.compat.v1.import_graph_def(graph_def)
   return sess

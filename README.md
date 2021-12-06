@@ -6,6 +6,8 @@ to control stratospheric balloons. It is a followup to the Nature paper
 
 ## Installation
 
+Prerequisites: python >= 3.7.
+
 For now, the BLE can be used by cloning the source:
 
 ```

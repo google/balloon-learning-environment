@@ -21,42 +21,31 @@ from typing import List, Optional, Sequence, Union
 
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.generative import vae
+from balloon_learning_environment.models import models
 from balloon_learning_environment.utils import units
 import flax
-import gin
 import jax
 from jax import numpy as jnp
 import numpy as np
 import scipy.interpolate
-import tensorflow as tf
-
-# TODO(scandido): We need to move the checkpoint file / frozen array with
-# VAE weights to this repo and then load it from a file.
-_WINDFIELD_PARMS_PATH = (
-    'balloon_learning_environment/models/'
-    'offlineskies22_decoder.msgpack')
 
 
-@gin.configurable
 class GenerativeWindField(wind_field.WindField):
   """A wind field created by a generative model."""
 
   def __init__(self,
-               key: Optional[jnp.ndarray] = None,
-               windfield_params_path: str = _WINDFIELD_PARMS_PATH):
+               key: Optional[jnp.ndarray] = None):
     """GenerativeWindField Constructor.
 
     Args:
       key: An optional key to seed the wind field with. If None, will use the
         current time in milliseconds.
-      windfield_params_path: Path to the generative model parameters.
     """
     super(GenerativeWindField, self).__init__()
 
     key = key if key else jax.random.PRNGKey(int(time.time() * 1000))
 
-    with tf.io.gfile.GFile(windfield_params_path, 'rb') as f:
-      serialized_params = f.read()
+    serialized_params = models.load_offlineskies22()
     self.params = flax.serialization.msgpack_restore(serialized_params)
 
     self.field = None
