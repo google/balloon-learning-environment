@@ -1,76 +1,57 @@
 # Balloon Learning Environment
+[Docs][docs]
 
-The Balloon Learning Environment (BLE) is a simulator for training RL agents
-to control stratospheric balloons. It is a followup to the Nature paper
+The Balloon Learning Environment (BLE) is a simulator for stratospheric
+balloons. It is designed as a benchmark environment for deep reinforcement
+learning algorithms, and is a followup to the Nature paper
 ["Autonomous navigation of stratospheric balloons using reinforcement learning"](https://www.nature.com/articles/s41586-020-2939-8).
 
-## Installation
+## Getting Started
 
-Prerequisites: python >= 3.7.
+Note: The BLE requires python >= 3.7
 
-For now, the BLE can be used by cloning the source:
-
-```
-git clone https://github.com/google/balloon-learning-environment
-```
+The BLE can easily be installed with pip:
 
 ```
-cd balloon-learning-environment
+pip install --upgrade pip && pip install balloon_learning_environment
 ```
 
-We recommend using a virtual environment:
+Once the package has been installed, you can test it runs correctly by
+evaluating one of the benchmark agents:
 
 ```
-python -m venv .venv && source .venv/bin/activate
+python -m balloon_learning_environment.eval.eval \
+  --agent=station_seeker \
+  --renderer=matplotlib \
+  --suite=micro_eval \
+  --output_dir=/tmp/ble/eval
 ```
 
-Make sure pip is the latest version:
+## Ensure the BLE is Using Your GPU/TPU
+
+The BLE contains a VAE for generating winds, which you will probably want
+to run on your accelerator. See the jax documentation for installing with
+[GPU](https://github.com/google/jax#pip-installation-gpu-cuda) or
+[TPU](https://github.com/google/jax#pip-installation-google-cloud-tpu).
+
+As a sanity check, you can open interactive python and run:
 
 ```
-pip install --upgrade pip
+from balloon_learning_environment.env import balloon_env
+env = balloon_env.BalloonEnv()
 ```
 
-Install all the prerequisites:
+If you are not running with GPU/TPU, you should see a log like:
 
 ```
-pip install -r requirements.txt
+WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
 ```
 
-The BLE internally uses a neural network as part of the environment, so we
-recommend installing jax with GPU support.
-See the [jax codebase](https://github.com/google/jax#pip-installation-gpu-cuda)
-for instructions.
+If you don't see this log, you should be good to go!
 
-## Training an Agent
-The set of agents available to train are listed in the [Agent
-Registry](https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents/agent_registry.py).
-You can train one of these with the following command:
+## Next Steps
 
-```
-python -m balloon_learning_environment.train \
-  --base_dir=/tmp/ble/train \
-  --agent=finetune_perciatelli
-```
-
-The following are the most useful agents to get started:
-
-*  `station_seeker`: A static controller designed by Loon which has a decent
-   performance, and was the baseline against which we compared in our
-   [Nature paper](https://www.nature.com/articles/s41586-020-2939-8)
-*  `perciatelli44`: The agent we trained for our
-   [Nature paper](https://www.nature.com/articles/s41586-020-2939-8).
-   It's a frozen agent (so does not do any extra training) but performs quite
-    well.
-*  `quantile`: A Quantile-based agent in JAX that uses the same
-   architecture as Perciatelli44, but starts training from a fresh
-   initialization.
-*  `finetune_perciatelli`: The same as `quantile`, but reloads the
-   `perciatelli44` weights, and is a great way to warm-start agent training.
-
-
-## Evaluating an Agent
-
-See the [evaluation readme](https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/README.md) for instructions on evaluating an agent.
+For more information, see the [docs][docs].
 
 ## Giving credit
 
@@ -103,3 +84,5 @@ atmospheric reanalyses of the global climate. Copernicus Climate Change Service
 (C3S) Data Store (CDS). (Accessed on 01-04-2021)
 ```
 
+
+[docs]: https://balloon-learning-environment.readthedocs.io/en/latest/
