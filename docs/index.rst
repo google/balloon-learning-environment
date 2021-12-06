@@ -11,7 +11,9 @@ but it's not quite ready yet! Please check back soon.
 
 .. toctree::
    :maxdepth: 1
-   :caption: API Documentation:
+   :caption: Getting Started:
+
+   getting_started.md
 
 
 Indices and tables
