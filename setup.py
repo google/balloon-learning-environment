@@ -18,11 +18,11 @@ import setuptools
 
 setuptools.setup(
     name='balloon_learning_environment',
-    version='0.0.1',
+    version='0.0.2',
     packages=setuptools.find_packages(),
     install_requires=[
         'absl-py',
-        'dopamine-rl',
+        'dopamine-rl >= 4.0.0',
         'flax',
         'gcsfs',
         'gin-config',
