@@ -18,7 +18,7 @@ import setuptools
 
 setuptools.setup(
     name='balloon_learning_environment',
-    version='0.0.2',
+    version='0.0.3',
     packages=setuptools.find_packages(),
     install_requires=[
         'absl-py',
@@ -31,7 +31,7 @@ setuptools.setup(
         's2sphere',
         'scikit-learn',
         'tensorflow',
-        'tensorflow-datasets',
+        'tensorflow-datasets >= 4.4.0',
         'tensorflow-probability',
         'transitions',
         'zarr',
