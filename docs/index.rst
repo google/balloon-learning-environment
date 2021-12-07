@@ -13,7 +13,14 @@ but it's not quite ready yet! Please check back soon.
    :maxdepth: 1
    :caption: Getting Started:
 
-   getting_started.md
+   getting_started
+   environment
+
+.. toctree::
+   :maxdepth: 2
+   :caption: PublicApi:
+
+   src/env
 
 
 Indices and tables

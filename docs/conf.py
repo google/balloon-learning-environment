@@ -51,6 +51,14 @@ extensions = [
     'myst_parser',
 ]
 
+# This simplifies the documentation by only displaying the class name
+# without the module path. For example:
+# balloon_learning_environment.env.balloon_env.BalloonEnv -> BalloonEnv.
+add_module_names = False
+
+# This orders the members of a class by the source code order.
+autodoc_member_order = 'bysource'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

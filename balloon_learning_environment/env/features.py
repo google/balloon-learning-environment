@@ -104,12 +104,12 @@ def compute_sunrise_time(balloon_state: balloon.BalloonState) -> float:
 
 
 class FeatureConstructor(abc.ABC):
-  """A interface for constructing features from the Balloon Arena.
+  """An interface for constructing features from the Balloon Arena.
 
   A feature constructor takes a forecast and multiple observations and
   constructs a feature vector as a numpy array.
 
-  This interface requires reset and observe functions since since the
+  This interface requires an observe function since since the
   feature construction may require state tracking e.g. when using a
   Gaussian Process over the observed winds.
   """
@@ -118,7 +118,8 @@ class FeatureConstructor(abc.ABC):
   # This is the atmosphere we are flying with, so should we have a noisy
   # observation instead?
   @abc.abstractmethod
-  def __init__(self, forecast: wind_field.WindField,
+  def __init__(self,
+               forecast: wind_field.WindField,
                atmosphere: standard_atmosphere.Atmosphere) -> None:
     """The FeatureConstructor constructor.
 
@@ -223,7 +224,7 @@ class NamedPerciatelliFeatures:
     """Returns the (magnitude, bearing, uncertainty) triple at the given level.
 
     This level may not be valid, since it is looking at the centered wind
-    column. Use `level_is_valid' to determine whether this is a valid
+    column. Use `level_is_valid` to determine whether this is a valid
     (reachable) pressure level.
 
     Args:
@@ -266,11 +267,11 @@ def convert_wind_feature_to_real_wind(
 
 @gin.configurable(allowlist=[])
 class PerciatelliFeatureConstructor(FeatureConstructor):
-  """Creates the feature vector from wind data."""
+  """A feature constructor for Perciatelli features."""
 
   def __init__(self, forecast: wind_field.WindField,
                atmosphere: standard_atmosphere.Atmosphere) -> None:
-    """Create a new features object to make features from wind data.
+    """Creates a new feature constructor object for Perciatelli features.
 
     Args:
       forecast: A forecast for the current arena.
@@ -295,7 +296,7 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
     self._last_balloon_state = None
 
   def observe(self, observation: simulator_data.SimulatorObservation) -> None:
-    """TODO(bellemare): Add docstring."""
+    """Observes the latest observation and updates the internal state."""
     self._last_balloon_state = observation.balloon_observation
     self.windgp.observe(observation.balloon_observation.x,
                         observation.balloon_observation.y,

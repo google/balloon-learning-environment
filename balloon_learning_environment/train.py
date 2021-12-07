@@ -26,7 +26,7 @@ from balloon_learning_environment.env import generative_wind_field
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.env.rendering import matplotlib_renderer
 from balloon_learning_environment.utils import run_helpers
-import  gym
+import gym
 import matplotlib
 import numpy as np
 

@@ -42,13 +42,7 @@ import numpy as np
 
 @gin.configurable
 class BalloonEnv(gym.Env):
-  """Balloon Learning Environment.
-
-  Observations returned by this environment are 3 dimensional
-        numpy arrays with the following format:
-        0-1: balloon's x, y position in km.
-        2: and the baloon's pressure level in kPa.
-  """
+  """Balloon Learning Environment."""
 
   def __init__(
       self,
@@ -68,7 +62,9 @@ class BalloonEnv(gym.Env):
 
     The reward function for the environment returns 1.0 when the balloon is
     with the station keeping radius, and roughly:
+
       reward_dropoff * 2^(-distance_from_radius / reward_halflife)
+
     when outside the station keeping radius. That is, the reward immediately
     outside the station keeping radius is reward_dropoff, and the reward
     decays expontentially as the balloon moves further from the radius.
@@ -121,9 +117,6 @@ class BalloonEnv(gym.Env):
 
     Returns:
       An (observation, reward, terminal, info) tuple.
-
-    Raises:
-      RuntimeError: If reset is not called at least once before step.
     """
     command = control.AltitudeControlCommand(action)
     observation = self.arena.step(command)
@@ -154,6 +147,11 @@ class BalloonEnv(gym.Env):
         'time_elapsed': balloon_state.time_elapsed}
 
   def reset(self) -> np.ndarray:
+    """Resets the environment.
+
+    Returns:
+      The initial observation.
+    """
     self._rng, arena_rng = jax.random.split(self._rng)
     observation = self.arena.reset(arena_rng)
 
@@ -194,6 +192,7 @@ class BalloonEnv(gym.Env):
     pass
 
   def seed(self, seed: int) -> None:
+    """Seeds the environment."""
     self._rng = jax.random.PRNGKey(seed)
 
   @property
@@ -202,17 +201,21 @@ class BalloonEnv(gym.Env):
 
   @property
   def action_space(self) -> gym.spaces.Discrete:
+    """Gets the action space."""
     return gym.spaces.Discrete(3)
 
   @property
   def observation_space(self) -> gym.Space:
+    """Gets the observation space."""
     return self.arena.feature_constructor.observation_space
 
   @property
   def reward_range(self) -> Tuple[float, float]:
+    """Gets the reward range."""
     return (0.0, 1.0)
 
   def get_simulator_state(self) -> simulator_data.SimulatorState:
+    """Gets the simulator state."""
     return self.arena.get_simulator_state()
 
   def _calculate_reward(self) -> float:
@@ -260,6 +263,7 @@ class BalloonEnv(gym.Env):
 
   def set_summary_writer(
       self, summary_writer: Optional[tensorboard.SummaryWriter]) -> None:
+    """Sets a summary writer for logging information to tensorboard."""
     self.summary_writer = summary_writer
 
   # TODO(psc): This shouldn't be done here. Modify this so it is passed back to
