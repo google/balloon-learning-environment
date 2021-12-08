@@ -37,7 +37,7 @@ setuptools.setup(
         'zarr',
     ],
     package_data={
-        '': ['*.msgpack', '*.pb'],
+        '': ['*.msgpack', '*.pb', '*.gin'],
     },
     python_requires='>=3.7',
 )

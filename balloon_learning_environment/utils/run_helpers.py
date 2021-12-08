@@ -15,8 +15,10 @@
 
 """Helper functions for running agents in train/eval."""
 
+import os
 from typing import Optional, Sequence
 
+import balloon_learning_environment
 from balloon_learning_environment.agents import agent as base_agent
 from balloon_learning_environment.agents import agent_registry
 import gin
@@ -65,6 +67,12 @@ def bind_gin_variables(
       parsed and bound.
   """
   gin_files = []
+
+  # The gin file paths start with balloon_learning_environment,
+  # so we need to add the parent directory to the search path.
+  ble_root = os.path.dirname(balloon_learning_environment.__file__)
+  ble_parent_dir = os.path.dirname(ble_root)
+  gin.add_config_file_search_path(ble_parent_dir)
 
   agent_gin_file = get_agent_gin_file(agent, agent_gin_file)
   if agent_gin_file is not None:
