@@ -99,6 +99,16 @@ class PerciatelliFeaturesTest(parameterized.TestCase):
     self.assertIsInstance(vector, np.ndarray)
     self.assertEqual(vector.shape, (1099,))
 
+  def test_features_are_in_expected_range(self):
+    observation = self.create_observation()
+
+    self.features.observe(observation)
+    vector = self.features.get_features()
+    observation_space = self.features.observation_space
+
+    self.assertTrue((vector >= observation_space.low).all())
+    self.assertTrue((vector <= observation_space.high).all())
+
   # --------------- Wind Column Tests ---------------
 
   def test_invalid_range_is_correctly_padded(self):

@@ -329,11 +329,22 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
     return feature_vector
 
   @property
-  def observation_space(self) -> gym.Space:
+  def observation_space(self) -> gym.spaces.Box:
     """Returns the observation space for this feature constructor."""
-    # All variables assumed normalized in [0, 1].
-    return gym.spaces.Box(
-        low=np.zeros(self.num_features), high=np.ones(self.num_features))
+    # Most features are in [0, 1].
+    low = np.zeros(self.num_features, dtype=np.float32)
+    high = np.ones(self.num_features, dtype=np.float32)
+
+    # The following features use sine or cosine, so are in [-1, 1]
+    trig_features = [3, 4, 5, 6]
+    low[trig_features] = -1.0
+
+    # The ACS pressure ratio feature is (pressure + superpressure) / pressure.
+    # Therefore it is in [1, inf].
+    low[15] = 1.0
+    high[15] = np.inf
+
+    return gym.spaces.Box(low=low, high=high)
 
   # NOTE(scandido): This should probably be renamed. Other pressures are very
   # much "valid", but our choice of feature vector would probably be poor for
