@@ -116,15 +116,20 @@ class DopamineUtilsTest(parameterized.TestCase):
     for i in range(last_checkpoint):
       filename = osp.join(self._test_subdir, f'checkpoint_{i:05d}.pkl')
       _ = self.create_tempfile(filename).full_path
+
     # First make sure all the files were created.
     self.assertLen(tf.io.gfile.glob(osp.join(self._test_subdir, '*')),
                    last_checkpoint)
+
     if checkpoint_duration is None:
-      dopamine_utils.clean_up_old_checkpoints(self._test_subdir, 100)
-      checkpoint_duration = 5  # Default value.
+      for i in range(1, 101):
+        dopamine_utils.clean_up_old_checkpoints(self._test_subdir, i)
+        checkpoint_duration = 5  # Default value.
     else:
-      dopamine_utils.clean_up_old_checkpoints(
-          self._test_subdir, 100, checkpoint_duration=checkpoint_duration)
+      for i in range(1, 101):
+        dopamine_utils.clean_up_old_checkpoints(
+            self._test_subdir, i, checkpoint_duration=checkpoint_duration)
+
     # Ensure only 5 checkpoints remain (the default).
     remaining_checkpoints = tf.io.gfile.glob(osp.join(self._test_subdir, '*'))
     self.assertLen(remaining_checkpoints,
