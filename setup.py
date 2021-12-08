@@ -18,7 +18,7 @@ import setuptools
 
 setuptools.setup(
     name='balloon_learning_environment',
-    version='0.0.3',
+    version='0.1.0',
     packages=setuptools.find_packages(),
     install_requires=[
         'absl-py',
