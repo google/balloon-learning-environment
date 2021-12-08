@@ -14,6 +14,7 @@ but it's not quite ready yet! Please check back soon.
    :caption: Getting Started:
 
    getting_started
+   about
    environment
 
 .. toctree::
