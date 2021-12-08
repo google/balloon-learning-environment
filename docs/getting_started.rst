@@ -92,7 +92,7 @@ evaluation suite on a benchmark agent, use the following example command:
    python -m balloon_learning_environment.eval.eval \
      --output_dir=/tmp/ble/eval \
      --agent=random \
-     --suite=micro_eval
+     --suite=micro_eval \
      --renderer=matplotlib
 
 
