@@ -15,30 +15,42 @@
 
 """A collection of evaluation suites."""
 
-from typing import List
+import dataclasses
+from typing import List, Sequence
 
-from balloon_learning_environment.eval import eval_lib
+
+@dataclasses.dataclass
+class EvaluationSuite:
+  """An evaluation suite specification.
+
+  Attributes:
+    seeds: A sequence of seeds to evaluate the agent on.
+    max_episode_length: The maximum number of steps to evaluate the agent
+      on one seed. Must be greater than 0.
+  """
+  seeds: Sequence[int]
+  max_episode_length: int
 
 
 _eval_suites = dict()
 
 
-_eval_suites['big_eval'] = eval_lib.EvaluationSuite(list(range(10_000)), 960)
-_eval_suites['medium_eval'] = eval_lib.EvaluationSuite(list(range(1_000)), 960)
-_eval_suites['small_eval'] = eval_lib.EvaluationSuite(list(range(100)), 960)
-_eval_suites['tiny_eval'] = eval_lib.EvaluationSuite(list(range(10)), 960)
-_eval_suites['micro_eval'] = eval_lib.EvaluationSuite([0], 960)
+_eval_suites['big_eval'] = EvaluationSuite(list(range(10_000)), 960)
+_eval_suites['medium_eval'] = EvaluationSuite(list(range(1_000)), 960)
+_eval_suites['small_eval'] = EvaluationSuite(list(range(100)), 960)
+_eval_suites['tiny_eval'] = EvaluationSuite(list(range(10)), 960)
+_eval_suites['micro_eval'] = EvaluationSuite([0], 960)
 
 
 def available_suites() -> List[str]:
   return list(_eval_suites.keys())
 
 
-def get_eval_suite(name: str) -> eval_lib.EvaluationSuite:
+def get_eval_suite(name: str) -> EvaluationSuite:
   """Gets a named evaluation suite."""
   if name not in _eval_suites:
     raise ValueError(f'Unknown eval suite {name}')
 
   # Copy the seeds, rather than returning a mutable object.
   suite = _eval_suites[name]
-  return eval_lib.EvaluationSuite(list(suite.seeds), suite.max_episode_length)
+  return EvaluationSuite(list(suite.seeds), suite.max_episode_length)

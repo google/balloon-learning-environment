@@ -22,6 +22,7 @@ from absl.testing import absltest
 from balloon_learning_environment.env import balloon_env
 from balloon_learning_environment.env.balloon import standard_atmosphere
 from balloon_learning_environment.eval import eval_lib
+from balloon_learning_environment.eval import suites
 from balloon_learning_environment.utils import run_helpers
 from balloon_learning_environment.utils import test_helpers
 from balloon_learning_environment.utils import units
@@ -38,7 +39,7 @@ class EvalLibTest(absltest.TestCase):
     self.env.arena._step_duration = dt.timedelta(seconds=10)
     self.agent = run_helpers.create_agent('random', self.env.action_space.n,
                                           self.env.observation_space.shape)
-    self.eval_suite = eval_lib.EvaluationSuite(
+    self.eval_suite = suites.EvaluationSuite(
         seeds=range(2), max_episode_length=3)
 
     np.random.seed(0)  # Required for random agent.
@@ -82,13 +83,14 @@ class EvalLibTest(absltest.TestCase):
     power_percent = 0.95
     atmosphere = standard_atmosphere.Atmosphere(jax.random.PRNGKey(0))
     flight_path = [
-        test_helpers.create_balloon(
-            x=units.Distance(m=1.0),
-            y=units.Distance(m=2.0),
-            pressure=3.0,
-            time_elapsed=dt.timedelta(days=5),
-            power_percent=power_percent,
-            atmosphere=atmosphere).state
+        eval_lib.SimpleBalloonState.from_balloon_state(
+            test_helpers.create_balloon(
+                x=units.Distance(m=1.0),
+                y=units.Distance(m=2.0),
+                pressure=3.0,
+                time_elapsed=dt.timedelta(days=5),
+                power_percent=power_percent,
+                atmosphere=atmosphere).state)
     ]
     eval_result = eval_lib.EvaluationResult(
         seed=seed,

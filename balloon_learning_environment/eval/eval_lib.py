@@ -15,8 +15,8 @@
 
 """Evaluation library for Balloon Learning Environment agents."""
 
-import copy
 import dataclasses
+import datetime as dt
 import json
 from typing import Any, List, Sequence
 
@@ -24,12 +24,12 @@ from absl import logging
 from balloon_learning_environment.agents import agent as base_agent
 from balloon_learning_environment.env import balloon_env
 from balloon_learning_environment.env.balloon import balloon
+from balloon_learning_environment.eval import suites
 from balloon_learning_environment.utils import units
 from jax import numpy as jnp
 import numpy as np
 
 
-# TODO(joshgreaves): Add option for encoding entire balloon state.
 class EvalResultEncoder(json.JSONEncoder):
   """A JSON encoder for encoding EvaluationResult objects.
 
@@ -37,8 +37,7 @@ class EvalResultEncoder(json.JSONEncoder):
   """
 
   def default(self, o: Any):
-    if isinstance(o, balloon.BalloonState):
-      # TODO(joshgreaves): Why is suprepressure an array?
+    if isinstance(o, SimpleBalloonState):
       return {
           'x': o.x.kilometers,
           'y': o.y.kilometers,
@@ -57,16 +56,26 @@ class EvalResultEncoder(json.JSONEncoder):
 
 
 @dataclasses.dataclass
-class EvaluationSuite:
-  """An evaluation suite specification.
+class SimpleBalloonState:
+  """A class for keeping track of a balloon state during evaluation."""
+  x: units.Distance
+  y: units.Distance
+  pressure: float
+  superpressure: float
+  time_elapsed: dt.timedelta
+  battery_soc: float
 
-  Attributes:
-    seeds: A sequence of seeds to evaluate the agent on.
-    max_episode_length: The maximum number of steps to evaluate the agent
-      on one seed. Must be greater than 0.
-  """
-  seeds: Sequence[int]
-  max_episode_length: int
+  @classmethod
+  def from_balloon_state(
+      cls,
+      balloon_state: balloon.BalloonState) -> 'SimpleBalloonState':
+    """Creates a SimpleBalloonState from a BalloonState."""
+    return cls(balloon_state.x,
+               balloon_state.y,
+               balloon_state.pressure,
+               balloon_state.superpressure,
+               balloon_state.time_elapsed,
+               balloon_state.battery_soc)
 
 
 # TODO(joshgreaves): Add some notion of wind difficulty.
@@ -96,7 +105,7 @@ class EvaluationResult:
   envelope_burst: bool
   zeropressure: bool
   final_timestep: int
-  flight_path: Sequence[balloon.BalloonState]
+  flight_path: Sequence[SimpleBalloonState]
 
   def __str__(self) -> str:
     return (f'EvaluationResult(seed={self.seed}, '
@@ -113,7 +122,7 @@ def _balloon_is_within_radius(balloon_state: balloon.BalloonState,
 
 def eval_agent(agent: base_agent.Agent,
                env: balloon_env.BalloonEnv,
-               eval_suite: EvaluationSuite,
+               eval_suite: suites.EvaluationSuite,
                *,
                render_period: int = 10) -> List[EvaluationResult]:
   """Evaluates an agent on a given test suite.
@@ -158,7 +167,7 @@ def eval_agent(agent: base_agent.Agent,
 
       total_reward += reward
       balloon_state = env.get_simulator_state().balloon_state
-      flight_path.append(copy.deepcopy(balloon_state))
+      flight_path.append(SimpleBalloonState.from_balloon_state((balloon_state)))
       steps_within_radius += _balloon_is_within_radius(balloon_state,
                                                        env.radius)
 
