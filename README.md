@@ -2,7 +2,8 @@
 [Docs][docs]
 
 <div align="center">
-  <img src="https://github.com/google/balloon-learning-environment/blob/master/docs/imgs/ble_logo_small.png?raw=True">
+  <img src="https://github.com/google/balloon-learning-environment/blob/master/docs/imgs/ble_logo_small.png?raw=True"
+       style="max-height: 200px;">
   <br><br>
 </div>
 
