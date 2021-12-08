@@ -280,14 +280,6 @@ class BalloonEnvTest(parameterized.TestCase):
       self.assertEqual(i % 3,
                        env.summary_writer.scalar.call_args_list[-1][0][1])
 
-  def test_gin_correctly_configures_registered_environment(self):
-    radius = 1.35
-    test_helpers.bind_environment_gin_parameters(
-        station_keeping_radius_km=radius)
-    env = gym.make('BalloonLearningEnvironment-v0')
-
-    self.assertEqual(env.radius, units.Distance(km=1.35))
-
 
 if __name__ == '__main__':
   absltest.main()

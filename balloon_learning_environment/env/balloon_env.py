@@ -40,6 +40,69 @@ import jax
 import numpy as np
 
 
+# TODO(joshgreaves): Maybe move into its own file.
+@gin.configurable
+def perciatelli_reward_function(
+    simulator_state: simulator_data.SimulatorState,
+    *,
+    station_keeping_radius_km: float = 50.0,
+    reward_dropoff: float = 0.4,
+    reward_halflife: float = 100.0) -> float:
+  """The reward function used to train Perciatelli44.
+
+  The reward function for the environment returns 1.0 when the balloon is
+  with the station keeping radius, and roughly:
+
+    reward_dropoff * 2^(-distance_from_radius / reward_halflife)
+
+  when outside the station keeping radius. That is, the reward immediately
+  outside the station keeping radius is reward_dropoff, and the reward
+  decays expontentially as the balloon moves further from the radius.
+
+  Args:
+    simulator_state: The current state of the simulator to calculate
+      reward for.
+    station_keeping_radius_km: The desired station keeping radius in km. When
+      the balloon is within this radius, the reward is 1.0.
+    reward_dropoff: The reward multiplier for when the balloon is outside of
+      station keeping range. See reward definition above.
+    reward_halflife: The half life of the reward function. See reward
+      definition above.
+
+  Returns:
+    A reward for the current simulator_state.
+  """
+  balloon_state = simulator_state.balloon_state
+  x, y = balloon_state.x, balloon_state.y
+  radius = units.Distance(km=station_keeping_radius_km)
+
+  # x, y are in meters.
+  distance = units.relative_distance(x, y)
+
+  # Base reward - distance to station keeping radius.
+  if distance <= radius:
+    # Reward is 1.0 within the radius.
+    reward = 1.0
+  else:
+    # Exponential decay outside boundary with drop
+    # ln(0.5) is approximately -0.69314718056.
+    reward = reward_dropoff * math.exp(
+        -0.69314718056 / reward_halflife * (distance - radius).kilometers)
+
+  # Power regularization. Only applied when using more power (going down)
+  # and there isn't excess energy available.
+  if (balloon_state.last_command == control.AltitudeControlCommand.DOWN and
+      not balloon_state.excess_energy):
+    max_multiplier = 0.95
+    penalty_skew = 0.3
+    scale = transforms.linear_rescale_with_saturation(
+        balloon_state.acs_power.watts, 100.0, 300.0)
+    multiplier = max_multiplier - penalty_skew * scale
+    reward *= multiplier
+
+  return reward
+
+
 @gin.configurable
 class BalloonEnv(gym.Env):
   """Balloon Learning Environment."""
@@ -48,9 +111,9 @@ class BalloonEnv(gym.Env):
       self,
       *,  # All arguments after this are keyword-only.
       station_keeping_radius_km: float = 50.0,
-      reward_dropoff: float = 0.4,
-      reward_halflife: float = 100.0,
       arena: Optional[balloon_arena.BalloonArenaInterface] = None,
+      reward_function: Callable[
+          [simulator_data.SimulatorState], float] = perciatelli_reward_function,
       feature_constructor_factory: Callable[
           [wind_field.WindField, standard_atmosphere.Atmosphere],
           features.FeatureConstructor] = features.PerciatelliFeatureConstructor,
@@ -60,24 +123,12 @@ class BalloonEnv(gym.Env):
       renderer: Optional[randerer_lib.Renderer] = None):
     """Constructs a Balloon Learning Environment Station Keeping Environment.
 
-    The reward function for the environment returns 1.0 when the balloon is
-    with the station keeping radius, and roughly:
-
-      reward_dropoff * 2^(-distance_from_radius / reward_halflife)
-
-    when outside the station keeping radius. That is, the reward immediately
-    outside the station keeping radius is reward_dropoff, and the reward
-    decays expontentially as the balloon moves further from the radius.
-
     Args:
-      station_keeping_radius_km: The desired station keeping radius in km. When
-        the balloon is within this radius, the reward is 1.0.
-      reward_dropoff: The reward multiplier for when the balloon is outside of
-        station keeping range. See reward definition above.
-      reward_halflife: The half life of the reward function. See reward
-        definition above.
+      station_keeping_radius_km: The desired station keeping radius in km.
       arena: A balloon arena (simulator) to wrap. If set to None, it will use
         the default balloon arena.
+      reward_function: A function that takes the current simulator state
+        and returns a scalar reward.
       feature_constructor_factory: A callable which returns a new
         FeatureConstructor object when called. The factory takes a forecast
         (WindField) and an initial observation from the simulator
@@ -87,8 +138,7 @@ class BalloonEnv(gym.Env):
       renderer: An optional renderer for rendering flight paths/simulator state.
     """
     self.radius = units.Distance(km=station_keeping_radius_km)
-    self._reward_dropoff = reward_dropoff
-    self._reward_halflife = reward_halflife
+    self._reward_fn = reward_function
     self._feature_constructor_factory = feature_constructor_factory
     self._global_iteration = 0
     self.summary_writer = None
@@ -122,14 +172,16 @@ class BalloonEnv(gym.Env):
     observation = self.arena.step(command)
     assert isinstance(observation, np.ndarray)
 
+    simulator_state = self.arena.get_simulator_state()
+
     if self._renderer is not None:
-      self._renderer.step(self.arena.get_simulator_state())
+      self._renderer.step(simulator_state)
 
     # Prepare reward
-    reward = self._calculate_reward()
+    reward = self._reward_fn(simulator_state)
 
     # Prepare is_terminal
-    balloon_state = self.arena.get_balloon_state()
+    balloon_state = simulator_state.balloon_state
     out_of_power = balloon_state.status == balloon.BalloonStatus.OUT_OF_POWER
     envelope_burst = (
         balloon_state.status == balloon.BalloonStatus.BURST)
@@ -217,39 +269,6 @@ class BalloonEnv(gym.Env):
   def get_simulator_state(self) -> simulator_data.SimulatorState:
     """Gets the simulator state."""
     return self.arena.get_simulator_state()
-
-  def _calculate_reward(self) -> float:
-    balloon_state = self.arena.get_balloon_state()
-    x, y = balloon_state.x, balloon_state.y
-
-    # x, y are in meters.
-    distance = units.relative_distance(x, y)
-
-    # Base reward - distance to station keeping radius.
-    if distance <= self.radius:
-      # Reward is 1.0 within the radius.
-      reward = 1.0
-    else:
-      # Exponential decay outside boundary with drop
-      # ln(0.5) is approximately -0.69314718056.
-      reward = self._reward_dropoff * math.exp(
-          -0.69314718056 / self._reward_halflife *
-          (distance - self.radius).kilometers)
-
-    # Power regularization. Only applied when using more power (going down)
-    # and there isn't excess energy available.
-    if (balloon_state.last_command == control.AltitudeControlCommand.DOWN and
-        not balloon_state.excess_energy):
-      max_multiplier = 0.95
-      penalty_skew = 0.3
-      scale = transforms.linear_rescale_with_saturation(
-          balloon_state.acs_power.watts, 100.0, 300.0)
-      multiplier = max_multiplier - penalty_skew * scale
-      reward *= multiplier
-
-    # TODO(joshgreaves): Add negative penalty for terminal state.
-
-    return reward
 
   def __str__(self) -> str:
     return 'SleewpalkEnv'

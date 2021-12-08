@@ -82,3 +82,10 @@ simulator history to create a feature vector. The default feature constructor
 is the
 :py:class:`PerciatelliFeatureConstructor<balloon_learning_environment.env.features.PerciatelliFeatureConstructor>`.
 
+The reward function can also be swapped out. The default reward function,
+:py:func:`perciatelli_reward_function<balloon_learning_environment.env.balloon_env.perciatelli_reward_function>`
+gives a reward of 1.0 as long as the agent is in the stationkeeping readius.
+The reward decays exponentially outside of this radius.
+
+.. image:: imgs/reward_function.png
+

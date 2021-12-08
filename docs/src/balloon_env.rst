@@ -8,3 +8,8 @@ balloon_learning_environment.env.balloon_env
    :members:
 
    .. automethod:: __init__
+
+.. autofunction:: balloon_learning_environment.env.balloon_env.perciatelli_reward_function
+
+.. image:: ../imgs/reward_function.png
+

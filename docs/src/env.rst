@@ -5,5 +5,5 @@ balloon_learning_environment.env
    :maxdepth: 1
    :caption: balloon_learning_environment.env:
 
-   src/balloon_env
-   src/features
+   balloon_env
+   features

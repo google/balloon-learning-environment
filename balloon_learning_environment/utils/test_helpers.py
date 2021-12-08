@@ -72,10 +72,12 @@ def bind_environment_gin_parameters(
       None.
     renderer: An optional renderer.
   """
-  gin.bind_parameter('BalloonEnv.station_keeping_radius_km',
+  gin.bind_parameter('perciatelli_reward_function.station_keeping_radius_km',
                      station_keeping_radius_km)
-  gin.bind_parameter('BalloonEnv.reward_dropoff', reward_dropoff)
-  gin.bind_parameter('BalloonEnv.reward_halflife', reward_halflife)
+  gin.bind_parameter('perciatelli_reward_function.reward_dropoff',
+                     reward_dropoff)
+  gin.bind_parameter('perciatelli_reward_function.reward_halflife',
+                     reward_halflife)
   gin.bind_parameter('BalloonEnv.arena', arena)
   gin.bind_parameter('BalloonEnv.feature_constructor_factory',
                      feature_constructor_factory)

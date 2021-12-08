@@ -18,7 +18,7 @@ but it's not quite ready yet! Please check back soon.
 
 .. toctree::
    :maxdepth: 2
-   :caption: PublicApi:
+   :caption: Public API:
 
    src/env
 
