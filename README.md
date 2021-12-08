@@ -1,6 +1,11 @@
 # Balloon Learning Environment
 [Docs][docs]
 
+<div align="center">
+  <img src="https://github.com/google/balloon-learning-environment/blob/master/docs/imgs/ble_logo_small.png?raw=True">
+  <br><br>
+</div>
+
 The Balloon Learning Environment (BLE) is a simulator for stratospheric
 balloons. It is designed as a benchmark environment for deep reinforcement
 learning algorithms, and is a followup to the Nature paper
