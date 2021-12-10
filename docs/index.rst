@@ -6,8 +6,13 @@
 Balloon Learning Environment
 ============================
 
-The Balloon Learning Environment documentation will live here,
-but it's not quite ready yet! Please check back soon.
+.. note::
+   The Balloon Learning Environment documentation is still under development.
+   Let us know if there is a page you'd like to see here!
+
+The Balloon Learning Environment (BLE) is a simulator for stratospheric
+balloons. It is designed as a challenge environment for deep reinforcement
+learning algorithms.
 
 .. toctree::
    :maxdepth: 1
@@ -16,6 +21,7 @@ but it's not quite ready yet! Please check back soon.
    getting_started
    about
    environment
+   benchmarks
 
 .. toctree::
    :maxdepth: 2
