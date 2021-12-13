@@ -1,4 +1,5 @@
 absl-py==1.0.0
+dopamine-rl==4.0.1
 flax==0.3.6
 gin-config==0.5.0
 jax==0.2.25

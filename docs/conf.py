@@ -47,6 +47,7 @@ html_logo = "imgs/ble_logo_small.png"
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autodoc.typehints',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
@@ -60,6 +61,10 @@ add_module_names = False
 
 # This orders the members of a class by the source code order.
 autodoc_member_order = 'bysource'
+
+# This removes type hints from the function definition and moves them
+# to the description below.
+autodoc_typehints = 'description'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

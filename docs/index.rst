@@ -18,8 +18,9 @@ learning algorithms.
    :maxdepth: 1
    :caption: Getting Started:
 
-   getting_started
    about
+   getting_started
+   new_agent
    environment
    benchmarks
 
@@ -27,7 +28,10 @@ learning algorithms.
    :maxdepth: 2
    :caption: Public API:
 
+   src/agents
    src/env
+   src/eval_lib
+   src/train_lib
 
 
 Indices and tables

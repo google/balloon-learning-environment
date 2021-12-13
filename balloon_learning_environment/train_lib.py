@@ -50,7 +50,20 @@ def run_training_loop(
         collector_dispatcher.CollectorConstructorType],
     *,
     render_period: int = 10) -> None:
-  """Run a training loop for a specified number of steps."""
+  """Runs a training loop for a specified number of steps.
+
+  Args:
+    base_dir: The directory to use as the experiment root. This is where
+      checkpoints and collector outputs will be written.
+    env: The environment to train on.
+    agent: The agent to train.
+    num_episodes: The number of episodes to train for.
+    max_episode_length: The number of episodes at which to end an episode.
+    collector_constructors: A sequence of collector constructors for
+      collecting and reporting training statistics.
+    render_period: The period with which to render the environment. This only
+      has an effect if the environments renderer is not None.
+  """
   checkpoint_dir = osp.join(base_dir, 'checkpoints')
   # Possibly reload the latest checkpoint, and start from the next episode
   # number.
