@@ -23,40 +23,26 @@ from absl import logging
 from absl.testing import absltest
 from balloon_learning_environment.metrics import console_collector
 from balloon_learning_environment.metrics import statistics_instance
-import gin
 import numpy as np
 import tensorflow as tf
 
 
 class ConsoleCollectorTest(absltest.TestCase):
 
-  def _bind_gin_parameters(self, fine_grained_logging, fine_grained_frequency,
-                           save_to_file):
-    gin.bind_parameter('ConsoleCollector.fine_grained_logging',
-                       fine_grained_logging)
-    gin.bind_parameter('ConsoleCollector.fine_grained_frequency',
-                       fine_grained_frequency)
-    gin.bind_parameter('ConsoleCollector.save_to_file', save_to_file)
-
   def setUp(self):
     super().setUp()
     self._na = 5
     self._tmpdir = flags.FLAGS.test_tmpdir
-    gin.clear_config()
     self._fine_grained_logging = False
     self._fine_grained_frequency = 10
-    self._bind_gin_parameters(
-        fine_grained_logging=self._fine_grained_logging,
-        fine_grained_frequency=self._fine_grained_frequency,
-        save_to_file=True)
-
-  def test_without_gin_parameters(self):
-    gin.clear_config()
-    with self.assertRaises(RuntimeError):
-      console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
+    self._save_to_file = True
 
   def test_valid_creation(self):
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
+    collector = console_collector.ConsoleCollector(
+        self._tmpdir, self._na, 0,
+        fine_grained_logging=self._fine_grained_logging,
+        fine_grained_frequency=self._fine_grained_frequency,
+        save_to_file=self._save_to_file)
     self.assertEqual(collector._base_dir,
                      osp.join(self._tmpdir, 'metrics/console'))
     self.assertTrue(osp.exists(collector._base_dir))
@@ -68,7 +54,11 @@ class ConsoleCollectorTest(absltest.TestCase):
                      self._fine_grained_frequency)
 
   def test_valid_creation_no_base_dir(self):
-    collector = console_collector.ConsoleCollector(None, self._na, 0)
+    collector = console_collector.ConsoleCollector(
+        None, self._na, 0,
+        fine_grained_logging=self._fine_grained_logging,
+        fine_grained_frequency=self._fine_grained_frequency,
+        save_to_file=self._save_to_file)
     self.assertIsNone(collector._base_dir)
     self.assertIsNone(collector._log_file)
     self.assertEqual(collector._fine_grained_logging,
@@ -77,12 +67,11 @@ class ConsoleCollectorTest(absltest.TestCase):
                      self._fine_grained_frequency)
 
   def test_valid_creation_no_save_to_file(self):
-    gin.clear_config()
-    self._bind_gin_parameters(
+    collector = console_collector.ConsoleCollector(
+        self._tmpdir, self._na, 0,
         fine_grained_logging=self._fine_grained_logging,
         fine_grained_frequency=self._fine_grained_frequency,
         save_to_file=False)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     self.assertEqual(collector._base_dir,
                      osp.join(self._tmpdir, 'metrics/console'))
     self.assertTrue(osp.exists(collector._base_dir))
@@ -98,12 +87,11 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertIsInstance(collector._log_file_writer, tf.io.gfile.GFile)
 
   def test_pre_training_no_save_to_file(self):
-    gin.clear_config()
-    self._bind_gin_parameters(
+    collector = console_collector.ConsoleCollector(
+        self._tmpdir, self._na, 0,
         fine_grained_logging=self._fine_grained_logging,
         fine_grained_frequency=self._fine_grained_frequency,
         save_to_file=False)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
     collector.pre_training()
     with self.assertRaises(AttributeError):
       _ = collector._log_file_writer
@@ -147,13 +135,13 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(num_steps, collector._current_episode_length)
 
   def test_step_with_fine_grained_logging(self):
-    gin.clear_config()
     fine_grained_logging = True
     fine_grained_frequency = 10
-    self._bind_gin_parameters(fine_grained_logging=fine_grained_logging,
-                              fine_grained_frequency=fine_grained_frequency,
-                              save_to_file=True)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
+    collector = console_collector.ConsoleCollector(
+        self._tmpdir, self._na, 0,
+        fine_grained_logging=fine_grained_logging,
+        fine_grained_frequency=fine_grained_frequency,
+        save_to_file=True)
     collector.pre_training()
     collector.begin_episode()
     expected_action_counts = np.zeros(self._na)
@@ -225,12 +213,12 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(0, collector._average_episode_length)
 
   def test_full_run(self):
-    gin.clear_config()
     fine_grained_frequency = 1
-    self._bind_gin_parameters(fine_grained_logging=True,
-                              fine_grained_frequency=fine_grained_frequency,
-                              save_to_file=True)
-    collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
+    collector = console_collector.ConsoleCollector(
+        self._tmpdir, self._na, 0,
+        fine_grained_logging=True,
+        fine_grained_frequency=fine_grained_frequency,
+        save_to_file=True)
     collector.pre_training()
     num_episodes = 2
     num_steps = 4

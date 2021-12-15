@@ -31,6 +31,7 @@ learning algorithms.
    src/agents
    src/env
    src/eval_lib
+   src/metrics
    src/train_lib
 
 

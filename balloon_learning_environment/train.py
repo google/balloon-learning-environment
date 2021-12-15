@@ -75,12 +75,10 @@ _RENDERERS = {
 
 def main(_) -> None:
   # Prepare metric collector gin files and constructors.
-  collector_gin_files, collector_constructors = train_lib.get_collector_data(
-      FLAGS.collectors)
+  collector_constructors = train_lib.get_collector_data(FLAGS.collectors)
   run_helpers.bind_gin_variables(FLAGS.agent,
                                  FLAGS.agent_gin_file,
-                                 FLAGS.gin_bindings,
-                                 collector_gin_files)
+                                 FLAGS.gin_bindings)
 
   renderer = None
   if FLAGS.renderer is not None:

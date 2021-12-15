@@ -21,7 +21,8 @@ from flax.metrics import tensorboard
 import gin
 
 
-@gin.configurable
+@gin.configurable(allowlist=['fine_grained_logging',
+                             'fine_grained_frequency'])
 class TensorboardCollector(collector.Collector):
   """Collector class for reporting statistics on Tensorboard."""
 
@@ -29,8 +30,8 @@ class TensorboardCollector(collector.Collector):
                base_dir: str,
                num_actions: int,
                current_episode: int,
-               fine_grained_logging: bool = gin.REQUIRED,
-               fine_grained_frequency: int = gin.REQUIRED):
+               fine_grained_logging: bool = False,
+               fine_grained_frequency: int = 1):
     if not isinstance(base_dir, str):
       raise ValueError(
           'Must specify a base directory for TensorboardCollector.')

@@ -18,10 +18,10 @@
 This class is what should be called from the main binary and will call each of
 the specified collectors for metrics reporting.
 
-Each metric collector is configured via gin configs/bindings (see examples in
-configs/). The constructor for each desired collector should be passed in as a
-list when creating this object. All of the collectors are expected to be
-subclasses of the `Collector` base class (defined in `collector.py`).
+Each metric collector can be further configured via gin bindings. The
+constructor for each desired collector should be passed in as a list when
+creating this object. All of the collectors are expected to be subclasses of the
+`Collector` base class (defined in `collector.py`).
 
 Example configuration:
 ```

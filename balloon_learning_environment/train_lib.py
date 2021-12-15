@@ -26,18 +26,15 @@ from balloon_learning_environment.metrics import statistics_instance
 
 def get_collector_data(
     collectors: Optional[Iterable[str]] = None
-) -> Tuple[List[str], List[collector_dispatcher.CollectorConstructorType]]:
+) -> List[collector_dispatcher.CollectorConstructorType]:
   """Returns a list of gin files and constructors for each passed collector."""
-  gin_files = []
   collector_constructors = []
   for c in collectors:
     if c not in collector_dispatcher.AVAILABLE_COLLECTORS:
       continue
-    gin_files.append(
-        f'{collector_dispatcher.BASE_CONFIG_PATH}/{c}_collector.gin')
     collector_constructors.append(
         collector_dispatcher.AVAILABLE_COLLECTORS[c])
-  return gin_files, collector_constructors
+  return collector_constructors
 
 
 def run_training_loop(

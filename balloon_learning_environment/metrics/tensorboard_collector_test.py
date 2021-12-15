@@ -23,41 +23,27 @@ from absl.testing import parameterized
 from balloon_learning_environment.metrics import statistics_instance
 from balloon_learning_environment.metrics import tensorboard_collector
 from flax.metrics import tensorboard
-import gin
 
 
 class TensorboardCollectorTest(parameterized.TestCase):
 
-  def _bind_gin_parameters(self, fine_grained_logging, fine_grained_frequency):
-    gin.bind_parameter('TensorboardCollector.fine_grained_logging',
-                       fine_grained_logging)
-    gin.bind_parameter('TensorboardCollector.fine_grained_frequency',
-                       fine_grained_frequency)
-
   def setUp(self):
     super().setUp()
     self._na = 5
-    gin.clear_config()
     self._fine_grained_logging = True
     self._fine_grained_frequency = 10
-    self._bind_gin_parameters(self._fine_grained_logging,
-                              self._fine_grained_frequency)
 
   def test_with_invalid_base_dir_raises_value_error(self):
     with self.assertRaises(ValueError):
       tensorboard_collector.TensorboardCollector(None, self._na, 0)
 
-  def test_without_gin_parameters_raises_runtime_error(self):
-    gin.clear_config()
-    with self.assertRaises(RuntimeError):
-      tensorboard_collector.TensorboardCollector(
-          self.create_tempdir().full_path, self._na, 0)
-
   def test_valid_creation_with_all_required_parameters(self):
     tensorboard.SummaryWriter = mock.MagicMock()
     base_dir = self.create_tempdir().full_path
     collector = tensorboard_collector.TensorboardCollector(
-        base_dir, self._na, 0)
+        base_dir, self._na, 0,
+        fine_grained_logging=self._fine_grained_logging,
+        fine_grained_frequency=self._fine_grained_frequency)
     self.assertEqual(collector._base_dir,
                      osp.join(base_dir, 'metrics/tensorboard'))
     self.assertTrue(osp.exists(collector._base_dir))
@@ -98,11 +84,11 @@ class TensorboardCollectorTest(parameterized.TestCase):
       dict(testcase_name='without_fine_logging', fine_logging=False),
       dict(testcase_name='with_fine_logging', fine_logging=True))
   def test_step(self, fine_logging):
-    gin.clear_config()
-    self._bind_gin_parameters(fine_logging, self._fine_grained_frequency)
     tensorboard.SummaryWriter = mock.MagicMock()
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na, 0)
+        self.create_tempdir().full_path, self._na, 0,
+        fine_grained_logging=fine_logging,
+        fine_grained_frequency=self._fine_grained_frequency)
     self.assertEqual(1, tensorboard.SummaryWriter.call_count)
 
     collector.summary_writer.scalar = mock.MagicMock()
@@ -139,14 +125,11 @@ class TensorboardCollectorTest(parameterized.TestCase):
       dict(testcase_name='without_fine_logging', fine_logging=False),
       dict(testcase_name='with_fine_logging', fine_logging=True))
   def test_end_episode(self, fine_logging):
-    gin.clear_config()
-    self._bind_gin_parameters(fine_logging, 1)
-    gin.bind_parameter('TensorboardCollector.fine_grained_logging',
-                       fine_logging)
-    gin.bind_parameter('TensorboardCollector.fine_grained_frequency', 1)
     tensorboard.SummaryWriter = mock.MagicMock()
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na, 0)
+        self.create_tempdir().full_path, self._na, 0,
+        fine_grained_logging=fine_logging,
+        fine_grained_frequency=1)
     collector.summary_writer.scalar = mock.MagicMock()
     collector.summary_writer.flush = mock.MagicMock()
     collector.pre_training()
@@ -189,11 +172,11 @@ class TensorboardCollectorTest(parameterized.TestCase):
       dict(testcase_name='without_fine_logging', fine_logging=False),
       dict(testcase_name='with_fine_logging', fine_logging=True))
   def test_full_run(self, fine_logging):
-    gin.clear_config()
-    self._bind_gin_parameters(fine_logging, 1)
     tensorboard.SummaryWriter = mock.MagicMock()
     collector = tensorboard_collector.TensorboardCollector(
-        self.create_tempdir().full_path, self._na, 0)
+        self.create_tempdir().full_path, self._na, 0,
+        fine_grained_logging=fine_logging,
+        fine_grained_frequency=1)
     collector.summary_writer.scalar = mock.MagicMock()
     collector.summary_writer.flush = mock.MagicMock()
     collector.pre_training()

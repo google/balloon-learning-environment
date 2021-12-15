@@ -26,7 +26,9 @@ import numpy as np
 import tensorflow as tf
 
 
-@gin.configurable
+@gin.configurable(allowlist=['fine_grained_logging',
+                             'fine_grained_frequency',
+                             'save_to_file'])
 class ConsoleCollector(collector.Collector):
   """Collector class for reporting statistics to the console."""
 
@@ -34,9 +36,9 @@ class ConsoleCollector(collector.Collector):
                base_dir: Union[str, None],
                num_actions: int,
                current_episode: int,
-               fine_grained_logging: bool = gin.REQUIRED,
-               fine_grained_frequency: int = gin.REQUIRED,
-               save_to_file: bool = gin.REQUIRED):
+               fine_grained_logging: bool = False,
+               fine_grained_frequency: int = 1,
+               save_to_file: bool = True):
     super().__init__(base_dir, num_actions, current_episode)
     if self._base_dir is not None and save_to_file:
       self._log_file = osp.join(self._base_dir, 'console.log')
