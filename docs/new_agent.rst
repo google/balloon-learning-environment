@@ -82,12 +82,13 @@ look something like this:
 You can optionally add
 :py:class:`Collector<balloon_learning_environment.metrics.collector.Collector>`
 to generate statistics during training. We include a set of collectors to
-*  print statistics to the console with
-:py:class:`ConsoleCollector<balloon_learning_environment.metrics.console_collector.ConsoleCollector>`
-*  save statistics to a pickle file with
-:py:class:`PickleCollector<balloon_learning_environment.metrics.pickle_collector.PickleCollector>`
-*  write to Tensorboard event files with
-:py:class:`TensorboardCollector<balloon_learning_environment.metrics.tensorboard_collector.TensorboardCollector>`
+
+#. print statistics to the console with
+   :py:class:`ConsoleCollector<balloon_learning_environment.metrics.console_collector.ConsoleCollector>`
+#. save statistics to a pickle file with
+   :py:class:`PickleCollector<balloon_learning_environment.metrics.pickle_collector.PickleCollector>`
+#. write to Tensorboard event files with
+   :py:class:`TensorboardCollector<balloon_learning_environment.metrics.tensorboard_collector.TensorboardCollector>`
 
 You can create your own by following the
 :py:class:`Collector<balloon_learning_environment.metrics.collector.Collector>`
