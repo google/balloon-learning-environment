@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2021 The Balloon Learning Environment Authors.
+# Copyright 2022 The Balloon Learning Environment Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import setuptools
 
 setuptools.setup(
     name='balloon_learning_environment',
-    version='0.1.0',
+    version='0.1.1',
     packages=setuptools.find_packages(),
     install_requires=[
         'absl-py',
@@ -27,7 +27,7 @@ setuptools.setup(
         'gcsfs',
         'gin-config',
         'gym',
-        'opensimplex',
+        'opensimplex <= 0.3.0',
         's2sphere',
         'scikit-learn',
         'tensorflow',
