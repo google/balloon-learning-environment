@@ -32,6 +32,7 @@ from flax import linen as nn
 import jax
 import jax.numpy as jnp
 import rlax
+import optax
 
 
 
@@ -85,18 +86,24 @@ def create_dqn(params: Dict[str, Any]):
   """Creates necessary components to run Acme's DQN."""
   update_period = 4
   target_update_period = 100
+  adaptive_learning_rate = params.pop('adaptive_learning_rate', False)
 
   config = dqn.DQNConfig(**params)
   config.discount = 0.993
   config.n_step = 5
   config.min_replay_size = 500
   config.target_update_period = target_update_period // update_period
-  config.learning_rate = 2e-6
   config.adam_eps = 0.00002
   config.max_replay_size = 2000000
   config.batch_size = 32
   config.samples_per_insert = config.batch_size / update_period
   config.prefetch_size = 0  # Somehow prefetching makes it much slower.
+  if adaptive_learning_rate:
+    config.learning_rate = optax.linear_schedule(
+        init_value=2e-6, end_value=4e-7,
+        transition_steps=5_000_000 // config.batch_size)
+  else:
+    config.learning_rate = 2e-6
 
   num_atoms = 51
   def make_networks(env_spec):
