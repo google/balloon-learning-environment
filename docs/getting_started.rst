@@ -19,7 +19,7 @@ and then install the balloon_learning_environment package:
 
 .. code-block:: console
 
-   pip install balloon_learning_envrionment
+   pip install balloon_learning_environment
 
 
 Ensure the BLE is Using Your GPU/TPU
