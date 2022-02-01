@@ -34,7 +34,6 @@ from balloon_learning_environment.env.balloon import standard_atmosphere
 from balloon_learning_environment.utils import constants
 from balloon_learning_environment.utils import sampling
 from balloon_learning_environment.utils import units
-from flax.metrics import tensorboard
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -119,12 +118,6 @@ class BalloonArenaInterface(abc.ABC):
     Returns:
       Noisy sensor readings of the current state.
     """
-
-  @abc.abstractmethod
-  def get_summaries(self,
-                    summary_writer: tensorboard.SummaryWriter,
-                    iteration: int) -> None:
-    """Records summaries to the provided SummaryWriter."""
 
 
 class BalloonArena(BalloonArenaInterface):
@@ -281,15 +274,3 @@ class BalloonArena(BalloonArenaInterface):
                                              self._balloon.state.y,
                                              self._balloon.state.pressure,
                                              self._balloon.state.time_elapsed)
-
-  def get_summaries(self,
-                    summary_writer: tensorboard.SummaryWriter,
-                    iteration: int) -> None:
-    """Records summaries to the provided SummaryWriter."""
-    summary_writer.scalar(
-        'Balloon/Hour', self._balloon.state.date_time.hour, iteration)
-    summary_writer.scalar(
-        'Balloon/NormalizedCharge', self._balloon.state.battery_soc, iteration)
-    summary_writer.scalar(
-        'Balloon/Pressure', self._balloon.state.pressure, iteration)
-    summary_writer.flush()

@@ -74,7 +74,7 @@ look something like this:
        '/tmp/ble/train/my_experiment',  # The experiment root path.
        env,
        agent,
-       num_episodes=2000,
+       num_iterations=2000,
        max_episode_length=960,  # 960 steps is 2 days, the default amount.
        collector_constructors=[])  # Specify some collectors to log training stats.
 

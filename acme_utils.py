@@ -17,13 +17,17 @@ r"""Acme utils.
 """
 
 import functools
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
+from acme import adders
+from acme import core
 from acme import wrappers
 from acme.agents.jax import dqn
 from acme.jax import networks as networks_lib
 from acme.jax import utils
+from balloon_learning_environment.agents import marco_polo_exploration
 from balloon_learning_environment.agents import networks
+from balloon_learning_environment.agents import random_walk_agent
 from balloon_learning_environment.env import balloon_env
 from balloon_learning_environment.env import simulator_data
 from balloon_learning_environment.utils import units
@@ -31,8 +35,9 @@ import dm_env
 from flax import linen as nn
 import jax
 import jax.numpy as jnp
-import rlax
+import numpy as np
 import optax
+import rlax
 
 
 
@@ -82,8 +87,61 @@ class QuantileNetwork(nn.Module):
     return {'q_dist': output.logits, 'q_values': output.q_values}
 
 
+class CombinedActor(core.ActorV2):
+  """Combines Acme's actor with MarcoPoloExploration exploration actor."""
+
+  def __init__(
+      self,
+      actor: core.ActorV2,
+      exploration_actor: marco_polo_exploration.MarcoPoloExploration,
+  ):
+    self._actor = actor
+    self._exploration_actor = exploration_actor
+
+  def select_action(self, observation: networks_lib.Observation):
+    action = self._actor.select_action(observation)
+    action = self._exploration_actor.step(0, observation, action)
+    return np.array(action, dtype=np.int32)
+
+  def observe_first(self, timestep: dm_env.TimeStep):
+    self._actor.observe_first(timestep)
+    self._exploration_actor.begin_episode(timestep.observation, 42)
+
+  def observe(self, action: networks_lib.Action,
+              next_timestep: dm_env.TimeStep):
+    self._actor.observe(action, next_timestep)
+
+  def update(self, wait: bool = False):
+    self._actor.update(wait)
+
+
+def marco_polo_actor(make_actor_fn):
+  """Wraps make_actor_fn to include MarcoPoloExploration."""
+  def make_actor(
+      random_key: networks_lib.PRNGKey,
+      policy_network,
+      adder: Optional[adders.AdderV2] = None,
+      variable_source: Optional[core.VariableSource] = None,
+  ):
+    original_actor = make_actor_fn(random_key, policy_network, adder,
+                                   variable_source)
+    if adder is None:  # eval actor
+      return original_actor
+
+    exploration = marco_polo_exploration.MarcoPoloExploration(
+        num_actions=3,
+        observation_shape=(1099,),
+        exploratory_episode_probability=0.8,
+        exploratory_agent_constructor=random_walk_agent.RandomWalkAgent)
+
+    return CombinedActor(original_actor, exploration)
+
+  return make_actor
+
+
 def create_dqn(params: Dict[str, Any]):
   """Creates necessary components to run Acme's DQN."""
+  use_marco_polo_exploration = params.pop('marco_polo_exploration', False)
   update_period = 4
   target_update_period = 100
   adaptive_learning_rate = params.pop('adaptive_learning_rate', False)
@@ -142,4 +200,6 @@ def create_dqn(params: Dict[str, Any]):
       return result
     return policy
 
+  if use_marco_polo_exploration:
+    rl_agent.make_actor = marco_polo_actor(rl_agent.make_actor)
   return rl_agent, config, make_networks, behavior_policy, eval_policy

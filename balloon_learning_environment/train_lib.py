@@ -16,7 +16,7 @@
 """Functions used by the main train binary."""
 
 import os.path as osp
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence
 
 from balloon_learning_environment.agents import agent as base_agent
 from balloon_learning_environment.env import balloon_env
@@ -37,16 +37,58 @@ def get_collector_data(
   return collector_constructors
 
 
-def run_training_loop(
-    base_dir: str,
-    env: balloon_env.BalloonEnv,
-    agent: base_agent.Agent,
-    num_episodes: int,
-    max_episode_length: int,
-    collector_constructors: Sequence[
-        collector_dispatcher.CollectorConstructorType],
-    *,
-    render_period: int = 10) -> None:
+def _run_one_episode(env: balloon_env.BalloonEnv,
+                     agent: base_agent.Agent,
+                     dispatcher: collector_dispatcher.CollectorDispatcher,
+                     max_episode_length: int,
+                     render_period: int) -> None:
+  """Runs an agent in an environment for one episode."""
+  dispatcher.begin_episode()
+  obs = env.reset()
+  # Request first action from agent.
+  a = agent.begin_episode(obs)
+  terminal = False
+  final_episode_step = max_episode_length
+  r = 0.0
+
+  for i in range(max_episode_length):
+    # Pass action to environment.
+    obs, r, terminal, _ = env.step(a)
+
+    if i % render_period == 0:
+      env.render()  # No-op if renderer is None.
+
+    # Record the current transition.
+    dispatcher.step(
+        statistics_instance.StatisticsInstance(
+            step=i, action=a, reward=r, terminal=terminal))
+
+    if terminal:
+      final_episode_step = i + 1
+      break
+
+    # Pass observation to agent, request new action.
+    a = agent.step(r, obs)
+
+  # The environment has no timeout, so terminal really is a terminal state.
+  agent.end_episode(r, terminal)
+
+  # TODO(joshgreaves): Fix dispatcher logging the same data twice on terminal.
+  dispatcher.end_episode(
+      statistics_instance.StatisticsInstance(
+          step=final_episode_step, action=a, reward=r, terminal=terminal))
+
+
+def run_training_loop(base_dir: str,
+                      env: balloon_env.BalloonEnv,
+                      agent: base_agent.Agent,
+                      num_iterations: int,
+                      max_episode_length: int,
+                      collector_constructors: Sequence[
+                          collector_dispatcher.CollectorConstructorType],
+                      *,
+                      render_period: int = 10,
+                      episodes_per_iteration: int = 50) -> None:
   """Runs a training loop for a specified number of steps.
 
   Args:
@@ -54,66 +96,37 @@ def run_training_loop(
       checkpoints and collector outputs will be written.
     env: The environment to train on.
     agent: The agent to train.
-    num_episodes: The number of episodes to train for.
+    num_iterations: The number of iterations to train for.
     max_episode_length: The number of episodes at which to end an episode.
     collector_constructors: A sequence of collector constructors for
       collecting and reporting training statistics.
     render_period: The period with which to render the environment. This only
       has an effect if the environments renderer is not None.
+    episodes_per_iteration: The number of episodes to run per iteration.
   """
   checkpoint_dir = osp.join(base_dir, 'checkpoints')
   # Possibly reload the latest checkpoint, and start from the next episode
   # number.
-  start_episode = agent.reload_latest_checkpoint(checkpoint_dir) + 1
+  start_iteration = max(agent.reload_latest_checkpoint(checkpoint_dir), 0)
   dispatcher = collector_dispatcher.CollectorDispatcher(
-      base_dir, env.action_space.n, collector_constructors, start_episode)
-  # Maybe pass on a summary writer to the environment.
-  env.set_summary_writer(dispatcher.get_summary_writer())
+      base_dir,
+      env.action_space.n,
+      collector_constructors,
+      start_iteration * episodes_per_iteration)
   # Maybe pass on a sumary writer to the agent.
   agent.set_summary_writer(dispatcher.get_summary_writer())
 
   agent.set_mode(base_agent.AgentMode.TRAIN)
 
   dispatcher.pre_training()
-  for episode in range(start_episode, num_episodes):
-    dispatcher.begin_episode()
-    obs = env.reset()
-    # Request first action from agent.
-    a = agent.begin_episode(obs)
-    terminal = False
-    final_episode_step = max_episode_length
-    r = 0.0
+  for iteration in range(start_iteration, num_iterations):
+    for _ in range(episodes_per_iteration):
+      _run_one_episode(env,
+                       agent,
+                       dispatcher,
+                       max_episode_length,
+                       render_period)
 
-    for i in range(max_episode_length):
-      # Pass action to environment.
-      obs, r, terminal, _ = env.step(a)
-
-      if i % render_period == 0:
-        env.render()  # No-op if renderer is None.
-
-      # Record the current transition.
-      dispatcher.step(statistics_instance.StatisticsInstance(
-          step=i,
-          action=a,
-          reward=r,
-          terminal=terminal))
-
-      if terminal:
-        final_episode_step = i + 1
-        break
-
-      # Pass observation to agent, request new action.
-      a = agent.step(r, obs)
-
-    # The environment has no timeout, so terminal really is a terminal state.
-    agent.end_episode(r, terminal)
-    # Possibly checkpoint the agent.
-    agent.save_checkpoint(checkpoint_dir, episode)
-    # TODO(joshgreaves): Fix dispatcher logging the same data twice on terminal.
-    dispatcher.end_episode(statistics_instance.StatisticsInstance(
-        step=final_episode_step,
-        action=a,
-        reward=r,
-        terminal=terminal))
+    agent.save_checkpoint(checkpoint_dir, iteration)
 
   dispatcher.end_training()

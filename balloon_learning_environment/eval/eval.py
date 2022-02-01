@@ -39,7 +39,7 @@ flags.DEFINE_enum('suite', 'big_eval',
                   'The evaluation suite to run.')
 flags.DEFINE_string(
     'wind_field', 'generative',
-    'The windfield type to use. See the _WIND_FIELDS dict below for options.')
+    'The wind field type to use. See the _WIND_FIELDS dict below for options.')
 flags.DEFINE_string('agent_gin_file', None, 'Gin file for agent configuration.')
 flags.DEFINE_multi_string('gin_bindings', [],
                           'Gin bindings to override default values.')

@@ -81,7 +81,7 @@ class GenerativeWindField(wind_field.WindField):
 
   def get_forecast(self, x: units.Distance, y: units.Distance, pressure: float,
                    elapsed_time: dt.timedelta) -> wind_field.WindVector:
-    """Gets a wind in the windfield at the specified location and time.
+    """Gets a wind in the wind field at the specified location and time.
 
     Args:
       x: An x offset (parallel to latitude).

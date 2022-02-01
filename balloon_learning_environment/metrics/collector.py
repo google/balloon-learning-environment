@@ -30,7 +30,7 @@ The methods to implement are:
 
 import abc
 import os.path as osp
-from typing import Union
+from typing import Optional
 
 from balloon_learning_environment.metrics import statistics_instance
 import tensorflow as tf
@@ -39,7 +39,9 @@ import tensorflow as tf
 class Collector(abc.ABC):
   """Abstract class for defining metric collectors."""
 
-  def __init__(self, base_dir: Union[str, None], num_actions: int,
+  def __init__(self,
+               base_dir: Optional[str],
+               num_actions: int,
                current_episode: int):
     if base_dir is not None:
       self._base_dir = osp.join(base_dir, 'metrics', self.get_name())

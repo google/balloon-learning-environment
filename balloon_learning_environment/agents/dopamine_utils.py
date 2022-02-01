@@ -16,6 +16,7 @@
 """Common utilities for Dopamine-based agents."""
 
 import os.path as osp
+import pathlib
 import pickle
 from typing import Any, Dict, Callable
 
@@ -26,6 +27,24 @@ import tensorflow as tf
 def _make_checkpoint_filename(checkpoint_dir: str,
                               iteration_number: int) -> str:
   return osp.join(checkpoint_dir, f'checkpoint_{iteration_number:05d}.pkl')
+
+
+def _is_checkpoint_name(file_name: str) -> bool:
+  path = pathlib.Path(file_name)
+  if path.suffix != '.pkl':
+    return False
+
+  parts = path.stem.split('_')
+  if len(parts) != 2:
+    return False
+
+  return parts[0] == 'checkpoint' and len(parts[1]) == 5
+
+
+def _get_checkpoint_iteration(checkpoint_name: str) -> int:
+  path = pathlib.Path(checkpoint_name)
+  parts = path.stem.split('_')
+  return int(parts[1])
 
 
 def save_checkpoint(checkpoint_dir: str,
@@ -87,7 +106,7 @@ def get_latest_checkpoint(checkpoint_dir: str) -> int:
 
 def clean_up_old_checkpoints(checkpoint_dir: str,
                              episode_number: int,
-                             checkpoint_duration: int = 5) -> None:
+                             checkpoint_duration: int = 50) -> None:
   """Removes the most recent stale checkpoint.
 
   Args:
@@ -96,13 +115,8 @@ def clean_up_old_checkpoints(checkpoint_dir: str,
     checkpoint_duration: How long (in terms of episodes) a checkpoint should
       last.
   """
-  # It is sufficient to delete the most recent stale checkpoint.
-  stale_episode_number = episode_number - checkpoint_duration - 1
-  stale_file = _make_checkpoint_filename(checkpoint_dir, stale_episode_number)
-
-  try:
-    tf.io.gfile.remove(stale_file)
-  except tf.errors.NotFoundError:
-    # Ignore if file not found.
-    pass
-
+  for file_name in tf.io.gfile.listdir(checkpoint_dir):
+    if _is_checkpoint_name(file_name):
+      iteration = _get_checkpoint_iteration(file_name)
+      if iteration < episode_number - checkpoint_duration:
+        tf.io.gfile.remove(osp.join(checkpoint_dir, file_name))

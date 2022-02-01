@@ -33,7 +33,6 @@ from balloon_learning_environment.env.balloon import standard_atmosphere
 from balloon_learning_environment.env.rendering import renderer as randerer_lib
 from balloon_learning_environment.utils import transforms
 from balloon_learning_environment.utils import units
-from flax.metrics import tensorboard
 import gin
 import gym
 import jax
@@ -141,7 +140,6 @@ class BalloonEnv(gym.Env):
     self._reward_fn = reward_function
     self._feature_constructor_factory = feature_constructor_factory
     self._global_iteration = 0
-    self.summary_writer = None
 
     if arena is None:
       self.arena = balloon_arena.BalloonArena(self._feature_constructor_factory,
@@ -189,7 +187,6 @@ class BalloonEnv(gym.Env):
         balloon_state.status == balloon.BalloonStatus.ZEROPRESSURE)
     is_terminal = out_of_power or envelope_burst or zeropressure
 
-    self._gather_summaries(action)
     self._global_iteration += 1
 
     return observation, reward, is_terminal, {
@@ -217,11 +214,10 @@ class BalloonEnv(gym.Env):
     """Renders a frame.
 
     Args:
-      mode: One of `human`, `rgb_array`, `ansi`, or `tensorboard`. `human`
+      mode: One of `human`, `rgb_array`, or `ansi`. `human`
         corresponds to rendering directly to the screen. `rgb_array` renders to
         a numpy array and returns it. `ansi` renders to a string or StringIO
-        object. `tensorboard` renders the images on tensorboard (if that
-        collector is active).
+        object.
 
     Returns:
       None, a numpy array of rgb data, or a Text object, depending on the mode.
@@ -232,10 +228,6 @@ class BalloonEnv(gym.Env):
     """
     if self._renderer is None:
       return None
-
-    if mode == 'tensorboard':
-      return self._renderer.render(
-          mode, self.summary_writer, self._global_iteration)
 
     return self._renderer.render(mode)
 
@@ -279,23 +271,6 @@ class BalloonEnv(gym.Env):
   def __exit__(self, *args: Any) -> bool:
     self.close()
     return False  # Reraise any exceptions
-
-  def set_summary_writer(
-      self, summary_writer: Optional[tensorboard.SummaryWriter]) -> None:
-    """Sets a summary writer for logging information to tensorboard."""
-    self.summary_writer = summary_writer
-
-  # TODO(psc): This shouldn't be done here. Modify this so it is passed back to
-  # the dispatcher (which passes it to the collectors).
-  def _gather_summaries(self, action: int):
-    """If summary_writer is available, gather summaries from BalloonArena."""
-    if self.summary_writer is None:
-      return
-
-    self.summary_writer.scalar('Balloon/Actions', action,
-                               self._global_iteration)
-    self.arena.get_summaries(self.summary_writer, self._global_iteration)
-    self.render(mode='tensorboard')
 
 
 gym.register(

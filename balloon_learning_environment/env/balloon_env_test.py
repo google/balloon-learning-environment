@@ -29,8 +29,6 @@ from balloon_learning_environment.env.balloon import standard_atmosphere
 from balloon_learning_environment.utils import constants
 from balloon_learning_environment.utils import test_helpers
 from balloon_learning_environment.utils import units
-from flax.metrics import tensorboard
-import gym
 import jax
 import numpy as np
 
@@ -241,44 +239,6 @@ class BalloonEnvTest(parameterized.TestCase):
     balloon_state2 = env2.get_simulator_state().balloon_state
 
     self.assertEqual(balloon_state1, balloon_state2)
-
-  def test_set_summary_writer(self):
-    env = balloon_env.BalloonEnv()
-    self.assertIsNone(env.summary_writer)
-    env.set_summary_writer(None)  # None is a valid argument
-    self.assertIsNone(env.summary_writer)
-    env.set_summary_writer(
-        tensorboard.SummaryWriter(self.create_tempdir().full_path))
-    self.assertIsNotNone(env.summary_writer)
-
-  def test_gather_summary_calls_with_defaults(self):
-    env = balloon_env.BalloonEnv()
-    env.summary_writer = mock.MagicMock()
-    env.summary_writer.scalar = mock.MagicMock()
-    env.arena.get_summaries = mock.MagicMock()
-    for i in range(10):
-      _, _, _, _ = env.step(i % 3)
-      self.assertEqual(i, env.arena.get_summaries.call_args_list[-1][0][1])
-      self.assertEqual('Balloon/Actions',
-                       env.summary_writer.scalar.call_args_list[-1][0][0])
-      self.assertEqual(i % 3,
-                       env.summary_writer.scalar.call_args_list[-1][0][1])
-
-  def test_gather_summary_calls_with_rendering(self):
-    env = balloon_env.BalloonEnv(renderer=mock.MagicMock())
-    env.summary_writer = mock.MagicMock()
-    env.summary_writer.scalar = mock.MagicMock()
-    env.arena.get_summaries = mock.MagicMock()
-    for i in range(10):
-      _, _, _, _ = env.step(i % 3)
-      self.assertEqual(i, env.arena.get_summaries.call_args_list[-1][0][1])
-      self.assertEqual('tensorboard',
-                       env._renderer.render.call_args_list[-1][0][0])
-      self.assertEqual(i, env._renderer.render.call_args_list[-1][0][2])
-      self.assertEqual('Balloon/Actions',
-                       env.summary_writer.scalar.call_args_list[-1][0][0])
-      self.assertEqual(i % 3,
-                       env.summary_writer.scalar.call_args_list[-1][0][1])
 
 
 if __name__ == '__main__':

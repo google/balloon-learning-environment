@@ -34,7 +34,7 @@ import numpy as np
 flags.DEFINE_string('agent', 'dqn', 'Type of agent to create.')
 flags.DEFINE_string('env_name', 'BalloonLearningEnvironment-v0',
                     'Name of environment to create.')
-flags.DEFINE_integer('num_episodes', 200, 'Number of episodes to train for.')
+flags.DEFINE_integer('num_iterations', 200, 'Number of episodes to train for.')
 flags.DEFINE_integer('max_episode_length', 960,
                      'Maximum number of steps per episode. Assuming 2 days, '
                      'with each step lasting 3 minutes.')
@@ -46,7 +46,7 @@ flags.DEFINE_integer(
     'differentiates between the runs. It is appended to base_dir.')
 flags.DEFINE_string(
     'wind_field', 'generative',
-    'The windfield type to use. See the _WIND_FIELDS dict below for options.')
+    'The wind field type to use. See the _WIND_FIELDS dict below for options.')
 flags.DEFINE_string('agent_gin_file', None,
                     'Gin file for agent configuration.')
 flags.DEFINE_multi_string('collectors', ['console'],
@@ -59,6 +59,10 @@ flags.DEFINE_string(
 flags.DEFINE_integer(
     'render_period', 10,
     'The period to render with. Only has an effect if renderer is not None.')
+flags.DEFINE_integer(
+    'episodes_per_iteration', 50,
+    'The number of episodes to run in one iteration. Checkpointing occurs '
+    'at the end of each iteration.')
 
 FLAGS = flags.FLAGS
 
@@ -95,13 +99,15 @@ def main(_) -> None:
       observation_shape=env.observation_space.shape)
 
   base_dir = osp.join(FLAGS.base_dir, FLAGS.agent, str(FLAGS.run_number))
-  train_lib.run_training_loop(base_dir,
-                              env,
-                              agent,
-                              FLAGS.num_episodes,
-                              FLAGS.max_episode_length,
-                              collector_constructors,
-                              render_period=FLAGS.render_period)
+  train_lib.run_training_loop(
+      base_dir,
+      env,
+      agent,
+      FLAGS.num_iterations,
+      FLAGS.max_episode_length,
+      collector_constructors,
+      render_period=FLAGS.render_period,
+      episodes_per_iteration=FLAGS.episodes_per_iteration)
 
   if FLAGS.base_dir is not None:
     image_save_path = osp.join(FLAGS.base_dir, 'balloon_path.png')

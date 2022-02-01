@@ -23,9 +23,7 @@ from absl import flags
 from acme import core
 from acme import environment_loop
 from acme import specs
-from acme.agents.jax import builders
 from acme.jax import networks as networks_lib
-from acme.jax import types
 from acme.jax.layouts import distributed_layout
 from acme.utils import counting
 from acme.utils import loggers
@@ -45,13 +43,14 @@ flags.DEFINE_integer('max_episode_length', 960,
 def default_evaluator(
     environment_factory: distributed_layout.EnvironmentFactory,
     network_factory: distributed_layout.NetworkFactory,
-    builder: builders.GenericActorLearnerBuilder,
-    policy_factory: distributed_layout.PolicyFactory) -> types.EvaluatorFactory:
+    policy_factory: distributed_layout.PolicyFactory
+) -> distributed_layout.EvaluatorFactory:
   """Returns a default evaluator process."""
   def evaluator(
       random_key: networks_lib.PRNGKey,
       variable_source: core.VariableSource,
       counter: counting.Counter,
+      make_actor: distributed_layout.MakeActorFn,
   ):
     """The evaluation process."""
 
@@ -59,8 +58,8 @@ def default_evaluator(
     environment = environment_factory()
     networks = network_factory(specs.make_environment_spec(environment))
 
-    actor = builder.make_actor(
-        random_key, policy_factory(networks), variable_source=variable_source)
+    actor = make_actor(
+        random_key, policy_factory(networks), variable_source)
     actor._per_episode_update = True  # pylint: disable=protected-access
 
     # Create logger and counter.
@@ -93,7 +92,6 @@ def get_program(params: Dict[str, Any]) -> lp.Program:
           default_evaluator(
               environment_factory=lambda: env_factory(True),
               network_factory=dqn_network_fn,
-              builder=rl_agent,
               policy_factory=eval_policy_fn),
       ],
       num_actors=FLAGS.num_actors,

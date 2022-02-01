@@ -15,8 +15,6 @@
 
 """Tests for balloon_learning_environment.env.balloon_arena."""
 
-from unittest import mock
-
 from absl.testing import absltest
 from absl.testing import parameterized
 from balloon_learning_environment.env import balloon_arena
@@ -89,33 +87,6 @@ class BalloonArenaTest(parameterized.TestCase):
     self.assertBetween(balloon_state.pressure,
                        constants.PERCIATELLI_PRESSURE_RANGE_MIN,
                        constants.PERCIATELLI_PRESSURE_RANGE_MAX)
-
-  def test_get_summaries(self):
-    arena = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
-    summary_writer = mock.MagicMock()
-    summary_writer.scalar = mock.MagicMock()
-    summary_writer.flush = mock.MagicMock()
-    arena._balloon.date_time = units.datetime(2013, 3, 25, 0, 0, 0)
-    for i in range(1, 11):
-      arena._balloon.state.date_time = units.datetime(2021, 6, 1, i, 0, 0)
-      arena._balloon.state.battery_charge = (
-          1.0 / i * arena._balloon.state.battery_capacity)
-      arena._balloon.state.pressure = i * 10
-      arena.get_summaries(summary_writer, i)
-      self.assertEqual('Balloon/Hour',
-                       summary_writer.scalar.call_args_list[-3][0][0])
-      self.assertEqual(i, summary_writer.scalar.call_args_list[-3][0][1])
-      self.assertEqual(i, summary_writer.scalar.call_args_list[-3][0][2])
-      self.assertEqual('Balloon/NormalizedCharge',
-                       summary_writer.scalar.call_args_list[-2][0][0])
-      self.assertEqual(1. / i, summary_writer.scalar.call_args_list[-2][0][1])
-      self.assertEqual(i, summary_writer.scalar.call_args_list[-2][0][2])
-      self.assertEqual('Balloon/Pressure',
-                       summary_writer.scalar.call_args_list[-1][0][0])
-      self.assertEqual(i * 10, summary_writer.scalar.call_args_list[-1][0][1])
-      self.assertEqual(i, summary_writer.scalar.call_args_list[-1][0][2])
-    self.assertEqual(10, summary_writer.flush.call_count)
-
 
 if __name__ == '__main__':
   absltest.main()
