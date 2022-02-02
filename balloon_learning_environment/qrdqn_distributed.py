@@ -55,7 +55,8 @@ def default_evaluator(
     """The evaluation process."""
 
     # Create environment and evaluator networks
-    environment = environment_factory()
+    dummy_seed = 1
+    environment = environment_factory(dummy_seed)
     networks = network_factory(specs.make_environment_spec(environment))
 
     actor = make_actor(
@@ -84,20 +85,20 @@ def get_program(params: Dict[str, Any]) -> lp.Program:
 
   agent = distributed_layout.DistributedLayout(
       seed=seed,
-      environment_factory=lambda: env_factory(False),
+      environment_factory=lambda seed: env_factory(False),
       network_factory=dqn_network_fn,
       builder=rl_agent,
       policy_network=behavior_policy_fn,
       evaluator_factories=[
           default_evaluator(
-              environment_factory=lambda: env_factory(True),
+              environment_factory=lambda seed: env_factory(True),
               network_factory=dqn_network_fn,
               policy_factory=eval_policy_fn),
       ],
       num_actors=FLAGS.num_actors,
       max_number_of_steps=FLAGS.num_episodes * FLAGS.max_episode_length,
       prefetch_size=config.prefetch_size,
-      )
+  )
   return agent.build()
 
 
