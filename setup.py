@@ -14,10 +14,16 @@
 # limitations under the License.
 
 """Setup file for installing the BLE."""
+import pathlib
 import setuptools
+
+current_directory = pathlib.Path(__file__).parent
+description = (current_directory / 'README.md').read_text()
 
 setuptools.setup(
     name='balloon_learning_environment',
+    long_description=description,
+    long_description_content_type='text/markdown',
     version='0.1.1',
     packages=setuptools.find_packages(),
     install_requires=[
