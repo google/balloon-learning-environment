@@ -21,6 +21,19 @@ and then install the balloon_learning_environment package:
 
    pip install balloon_learning_environment
 
+To install with Dopamine and/or ACME packages, run:
+
+.. code-block:: console
+
+   pip install balloon_learning_environment[dopamine,acme]
+
+To install from GitHub directly, run the following commands from the root
+directory where you cloned the repository:
+
+.. code-block:: console
+
+   pip install .[dopamine,acme]
+
 
 Ensure the BLE is Using Your GPU/TPU
 ####################################

@@ -20,7 +20,15 @@ Note: The BLE requires python >= 3.7
 The BLE can easily be installed with pip:
 
 ```
-pip install --upgrade pip && pip install balloon_learning_environment
+$ pip install --upgrade pip
+$ pip install balloon_learning_environment
+```
+
+To install with `Dopamine` and/or `ACME` packages:
+
+```
+$ pip install --upgrade pip
+$ pip install balloon_learning_environment[dopamine,acme]
 ```
 
 Once the package has been installed, you can test it runs correctly by
@@ -32,6 +40,14 @@ python -m balloon_learning_environment.eval.eval \
   --renderer=matplotlib \
   --suite=micro_eval \
   --output_dir=/tmp/ble/eval
+```
+
+To install from GitHub directly, run the following commands from the root
+directory where you cloned the repository:
+
+```
+$ pip install --upgrade pip
+$ pip install .[dopamine,acme]
 ```
 
 ## Ensure the BLE is Using Your GPU/TPU

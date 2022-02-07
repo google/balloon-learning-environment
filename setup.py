@@ -20,6 +20,18 @@ import setuptools
 current_directory = pathlib.Path(__file__).parent
 description = (current_directory / 'README.md').read_text()
 
+dopamine_requirements = [
+    'dopamine-rl >= 4.0.0',
+]
+
+acme_requirements = [
+    'dm-acme',
+    'dm-haiku',
+    'dm-reverb',
+    'dm-sonnet',
+    'rlax',
+]
+
 setuptools.setup(
     name='balloon_learning_environment',
     long_description=description,
@@ -28,11 +40,12 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'absl-py',
-        'dopamine-rl >= 4.0.0',
         'flax',
         'gcsfs',
         'gin-config',
         'gym',
+        'jax >= 0.2.28",
+        'jaxlib >= 0.1.76",
         'opensimplex <= 0.3.0',
         's2sphere',
         'scikit-learn',
@@ -42,6 +55,10 @@ setuptools.setup(
         'transitions',
         'zarr',
     ],
+    extras_require={
+        'dopamine': dopamine_requirements,
+        'acme': acme_requirements,
+    },
     package_data={
         '': ['*.msgpack', '*.pb', '*.gin'],
     },
