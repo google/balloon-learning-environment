@@ -33,6 +33,8 @@ import launchpad as lp
 
 
 FLAGS = flags.FLAGS
+flags.DEFINE_string('base_dir', '~/acme',
+                    'Directory where to store statistics/images.')
 flags.DEFINE_integer('num_actors', 128, 'Number of actors.')
 flags.DEFINE_integer('num_episodes', 10000, 'Number of episodes to train for.')
 flags.DEFINE_integer('max_episode_length', 960,
@@ -98,6 +100,7 @@ def get_program(params: Dict[str, Any]) -> lp.Program:
       num_actors=FLAGS.num_actors,
       max_number_of_steps=FLAGS.num_episodes * FLAGS.max_episode_length,
       prefetch_size=config.prefetch_size,
+      workdir=FLAGS.base_dir,
   )
   return agent.build()
 
