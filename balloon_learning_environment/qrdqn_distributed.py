@@ -70,7 +70,7 @@ def default_evaluator(
     logger = loggers.make_default_logger('evaluator')
 
     # Create the run loop and return it.
-    return environment_loop.EnvironmentLoopV2(environment, actor, counter,
+    return environment_loop.EnvironmentLoop(environment, actor, counter,
                                               logger)
   return evaluator
 

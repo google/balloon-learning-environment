@@ -70,12 +70,12 @@ def main(_) -> None:
   actor_logger = loggers.make_default_logger('actor')
   evaluator_logger = loggers.make_default_logger('evaluator')
 
-  loop = acme.EnvironmentLoopV2(
+  loop = acme.EnvironmentLoop(
       env,
       agent,
       logger=actor_logger,
       counter=counting.Counter(counter, 'actor', time_delta=0.))
-  eval_loop = acme.EnvironmentLoopV2(
+  eval_loop = acme.EnvironmentLoop(
       eval_env,
       eval_actor,
       logger=evaluator_logger,

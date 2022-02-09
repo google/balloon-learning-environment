@@ -87,12 +87,12 @@ class QuantileNetwork(nn.Module):
     return {'q_dist': output.logits, 'q_values': output.q_values}
 
 
-class CombinedActor(core.ActorV2):
+class CombinedActor(core.Actor):
   """Combines Acme's actor with MarcoPoloExploration exploration actor."""
 
   def __init__(
       self,
-      actor: core.ActorV2,
+      actor: core.Actor,
       exploration_actor: marco_polo_exploration.MarcoPoloExploration,
   ):
     self._actor = actor
@@ -120,7 +120,7 @@ def marco_polo_actor(make_actor_fn):
   def make_actor(
       random_key: networks_lib.PRNGKey,
       policy_network,
-      adder: Optional[adders.AdderV2] = None,
+      adder: Optional[adders.Adder] = None,
       variable_source: Optional[core.VariableSource] = None,
   ):
     original_actor = make_actor_fn(random_key, policy_network, adder,
