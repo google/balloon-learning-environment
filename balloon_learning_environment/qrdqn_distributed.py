@@ -102,7 +102,7 @@ def get_program(params: Dict[str, Any]) -> lp.Program:
       prefetch_size=config.prefetch_size,
       checkpointing_config=distributed_layout.CheckpointingConfig(
           directory=FLAGS.base_dir,
-          add_uid=(FLAGS.base_dir == '~/acme')
+          add_uid=True,
       ),
   )
   return agent.build()
