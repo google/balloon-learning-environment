@@ -100,7 +100,10 @@ def get_program(params: Dict[str, Any]) -> lp.Program:
       num_actors=FLAGS.num_actors,
       max_number_of_steps=FLAGS.num_episodes * FLAGS.max_episode_length,
       prefetch_size=config.prefetch_size,
-      workdir=FLAGS.base_dir,
+      checkpointing_config=distributed_layout.CheckpointingConfig(
+          directory=FLAGS.base_dir,
+          add_uid=(FLAGS.base_dir == '~/acme')
+      ),
   )
   return agent.build()
 
