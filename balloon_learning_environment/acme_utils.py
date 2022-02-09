@@ -87,12 +87,12 @@ class QuantileNetwork(nn.Module):
     return {'q_dist': output.logits, 'q_values': output.q_values}
 
 
-class CombinedActor(core.Actor):
+class CombinedActor(core.ActorV2):
   """Combines Acme's actor with MarcoPoloExploration exploration actor."""
 
   def __init__(
       self,
-      actor: core.Actor,
+      actor: core.ActorV2,
       exploration_actor: marco_polo_exploration.MarcoPoloExploration,
   ):
     self._actor = actor

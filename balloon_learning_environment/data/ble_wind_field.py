@@ -25,7 +25,6 @@ import dataclasses
 import itertools
 from typing import Optional
 
-from absl import logging
 import gcsfs
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -77,8 +76,7 @@ class BLEWindField(tfds.core.GeneratorBasedBuilder):
           num_fields=None),
   ]
   GCS_URL = 'gs://ble-public/downloads'
-  # TODO(vdumoulin): replace with the public filename once available.
-  GCS_FILENAME = 'placeholder_array.zarr'
+  GCS_FILENAME = 'historical_wind_fields.zarr'
 
   def _info(self) -> tfds.core.DatasetInfo:
     """Dataset metadata."""
@@ -97,7 +95,6 @@ class BLEWindField(tfds.core.GeneratorBasedBuilder):
     )
 
   def _split_generators(self, dl_manager: tfds.download.DownloadManager):
-    logging.warn('Using placeholder data. Do not use in real experiments yet.')
     return {'train': self._generate_examples()}
 
   def _generate_examples(self):
