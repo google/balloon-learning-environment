@@ -49,6 +49,7 @@ acme_requirements = [
     'dm-reverb',
     'dm-sonnet',
     'rlax',
+    'xmanager',
 ]
 
 
