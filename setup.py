@@ -24,7 +24,6 @@ description = (current_directory / 'README.md').read_text()
 core_requirements = [
     'absl-py',
     'flax',
-    'gcsfs',
     'gin-config',
     'gym',
     'jax >= 0.2.28',
@@ -33,10 +32,8 @@ core_requirements = [
     's2sphere',
     'scikit-learn',
     'tensorflow',
-    'tensorflow-datasets >= 4.4.0',
     'tensorflow-probability',
     'transitions',
-    'zarr',
 ]
 
 dopamine_requirements = [
