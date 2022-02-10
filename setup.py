@@ -17,6 +17,8 @@
 import os
 import pathlib
 import setuptools
+from setuptools.command import build_py
+from setuptools.command import develop
 
 current_directory = pathlib.Path(__file__).parent
 description = (current_directory / 'README.md').read_text()
@@ -61,25 +63,25 @@ def generate_requirements_file(path=None):
     path: path to the requirements.txt file to generate.
   """
   if not path:
-    path = os.path.join(os.path.dirname(__file__), 'acme/requirements.txt')
+    path = os.path.join(os.path.dirname(__file__), 'acme_requirements.txt')
   with open(path, 'w') as f:
     for package in set(core_requirements + dopamine_requirements +
                        acme_requirements):
       f.write(f'{package}\n')
 
 
-class BuildPy(setuptools.command.build_py.build_py):
+class BuildPy(build_py.build_py):
 
   def run(self):
     generate_requirements_file()
-    setuptools.command.build_py.build_py.run(self)
+    build_py.build_py.run(self)
 
 
-class Develop(setuptools.command.develop.develop):
+class Develop(develop.develop):
 
   def run(self):
     generate_requirements_file()
-    setuptools.command.develop.develop.run(self)
+    develop.develop.run(self)
 
 cmdclass = {
     'build_py': BuildPy,
