@@ -46,8 +46,6 @@ class ConsoleCollector(collector.Collector):
       self._log_file = None
     self._fine_grained_logging = fine_grained_logging
     self._fine_grained_frequency = fine_grained_frequency
-    self._average_episode_reward = 0.0
-    self._average_episode_length = 0.0
 
   def get_name(self) -> str:
     return 'console'
@@ -59,42 +57,38 @@ class ConsoleCollector(collector.Collector):
   def begin_episode(self) -> None:
     self._action_counts = np.zeros(self._num_actions)
     self._current_episode_reward = 0.0
-    self._current_episode_length = 0.0
 
   def step(self, statistics: statistics_instance.StatisticsInstance) -> None:
     self._current_episode_reward += statistics.reward
     if statistics.action < 0 or statistics.action >= self._num_actions:
       raise ValueError(f'Invalid action: {statistics.action}')
     self._action_counts[statistics.action] += 1
-    if (self._fine_grained_logging and
-        self._current_episode_length % self._fine_grained_frequency == 0):
+    if (self._fine_grained_logging
+        and statistics.step % self._fine_grained_frequency == 0):
       step_string = (
           f'Step: {statistics.step}, action: {statistics.action}, '
           f'reward: {statistics.reward}, terminal: {statistics.terminal}\n')
       logging.info(step_string)
       if self._log_file is not None:
         self._log_file_writer.write(step_string)
-    self._current_episode_length += 1
 
   def end_episode(self,
                   statistics: statistics_instance.StatisticsInstance) -> None:
     self._current_episode_reward += statistics.reward
-    self._current_episode_length += 1
     self._action_counts[statistics.action] += 1
     action_distribution = self._action_counts / np.sum(self._action_counts)
-    self.num_episodes += 1
-    self._average_episode_reward += self._current_episode_reward
-    self._average_episode_length += self._current_episode_length
+
     episode_string = (
-        f'Episode {self.num_episodes} reward: {self._current_episode_reward}, '
-        f'episode length: {self._current_episode_length}, '
-        f'Action distribution: {action_distribution}, '
-        f'Average reward: {self._average_episode_reward / self.num_episodes}, '
-        'Average episode length: '
-        f'{self._average_episode_length / self.num_episodes}\n')
+        f'Episode {self.current_episode}: '
+        f'reward: {self._current_episode_reward:07.2f}, '  # format: 0000.00
+        f'episode length: {statistics.step}, '
+        f'action distribution: {action_distribution}')
     logging.info(episode_string)
+
     if self._log_file is not None:
       self._log_file_writer.write(episode_string)
+
+    self.current_episode += 1
 
   def end_training(self) -> None:
     if self._log_file is not None:

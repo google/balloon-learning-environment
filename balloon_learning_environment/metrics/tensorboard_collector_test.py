@@ -57,27 +57,19 @@ class TensorboardCollectorTest(parameterized.TestCase):
   def test_pre_training(self):
     collector = tensorboard_collector.TensorboardCollector(
         self.create_tempdir().full_path, self._na, 0)
-    # Neither _global_step nor _num_episodes are created until `pre_training` is
-    # called.
+    # _global_step is not created until `pre_training` is called.
     with self.assertRaises(AttributeError):
       _ = collector._global_step
-    with self.assertRaises(AttributeError):
-      _ = collector._num_episodes
     collector.pre_training()
     self.assertEqual(0, collector._global_step)
-    self.assertEqual(0, collector._num_episodes)
 
   def test_begin_episode(self):
     collector = tensorboard_collector.TensorboardCollector(
         self.create_tempdir().full_path, self._na, 0)
-    # Neither _episode_length nor _episode_reward are created until
-    # `begin_episode` is called.
-    with self.assertRaises(AttributeError):
-      _ = collector._episode_length
+    # _episode_reward is not created until `begin_episode` is called.
     with self.assertRaises(AttributeError):
       _ = collector._episode_reward
     collector.begin_episode()
-    self.assertEqual(0, collector._episode_length)
     self.assertEqual(0.0, collector._episode_reward)
 
   @parameterized.named_parameters(
@@ -117,8 +109,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
     self.assertEqual(collector.summary_writer.scalar.call_count, calls)
     self.assertEqual(collector.summary_writer.flush.call_count, calls)
     self.assertEqual(num_steps, collector._global_step)
-    self.assertEqual(0, collector._num_episodes)
-    self.assertEqual(num_steps, collector._episode_length)
+    self.assertEqual(0, collector.current_episode)
     self.assertEqual(cumulative_reward, collector._episode_reward)
 
   @parameterized.named_parameters(
@@ -164,8 +155,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
     self.assertEqual(collector.summary_writer.flush.call_count,
                      flush_call_count)
     self.assertEqual(1, collector._global_step)
-    self.assertEqual(1, collector._num_episodes)
-    self.assertEqual(1, collector._episode_length)
+    self.assertEqual(1, collector.current_episode)
     self.assertEqual(3.0, collector._episode_reward)
 
   @parameterized.named_parameters(
@@ -225,7 +215,7 @@ class TensorboardCollectorTest(parameterized.TestCase):
                        collector.summary_writer.scalar.call_args_list[-2][0][2])
       self.assertEqual('Train/EpisodeLength',
                        collector.summary_writer.scalar.call_args_list[-1][0][0])
-      self.assertEqual(num_steps + 1,
+      self.assertEqual(num_steps,
                        collector.summary_writer.scalar.call_args_list[-1][0][1])
       self.assertEqual(i,
                        collector.summary_writer.scalar.call_args_list[-1][0][2])

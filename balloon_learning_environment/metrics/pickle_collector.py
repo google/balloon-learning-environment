@@ -25,7 +25,6 @@ import tensorflow as tf
 
 class PickleCollector(collector.Collector):
   """Collector class for reporting statistics to the console."""
-  _current_episode: int
 
   def __init__(self,
                base_dir: str,
@@ -39,7 +38,7 @@ class PickleCollector(collector.Collector):
     return 'pickle'
 
   def pre_training(self) -> None:
-    self._current_episode = 0
+    pass
 
   def begin_episode(self) -> None:
     self._statistics = []
@@ -51,10 +50,10 @@ class PickleCollector(collector.Collector):
                   statistics: statistics_instance.StatisticsInstance) -> None:
     self._statistics.append(statistics)
     pickle_file = osp.join(self._base_dir,
-                           f'pickle_{self._current_episode}.pkl')
+                           f'pickle_{self.current_episode}.pkl')
     with tf.io.gfile.GFile(pickle_file, 'w') as f:
       pickle.dump(self._statistics, f, protocol=pickle.HIGHEST_PROTOCOL)
-    self._current_episode += 1
+    self.current_episode += 1
 
   def end_training(self) -> None:
     pass

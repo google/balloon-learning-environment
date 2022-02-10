@@ -44,11 +44,10 @@ class TensorboardCollector(collector.Collector):
     return 'tensorboard'
 
   def pre_training(self) -> None:
+    # TODO(joshgreaves): This is wrong if we are starting from a checkpoint.
     self._global_step = 0
-    self._num_episodes = 0
 
   def begin_episode(self) -> None:
-    self._episode_length = 0
     self._episode_reward = 0.0
 
   def _log_fine_grained_statistics(
@@ -62,22 +61,20 @@ class TensorboardCollector(collector.Collector):
       if self._global_step % self._fine_grained_frequency == 0:
         self._log_fine_grained_statistics(statistics)
     self._global_step += 1
-    self._episode_length += 1
     self._episode_reward += statistics.reward
 
   def end_episode(self,
                   statistics: statistics_instance.StatisticsInstance) -> None:
     if self._fine_grained_logging:
       self._log_fine_grained_statistics(statistics)
-    self._episode_length += 1
     self._episode_reward += statistics.reward
     self.summary_writer.scalar('Train/EpisodeReward', self._episode_reward,
-                               self._num_episodes)
-    self.summary_writer.scalar('Train/EpisodeLength', self._episode_length,
-                               self._num_episodes)
+                               self.current_episode)
+    self.summary_writer.scalar('Train/EpisodeLength', statistics.step,
+                               self.current_episode)
     self.summary_writer.flush()
     self._global_step += 1
-    self._num_episodes += 1
+    self.current_episode += 1
 
   def end_training(self) -> None:
     pass

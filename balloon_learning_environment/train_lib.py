@@ -73,7 +73,6 @@ def _run_one_episode(env: balloon_env.BalloonEnv,
   # The environment has no timeout, so terminal really is a terminal state.
   agent.end_episode(r, terminal)
 
-  # TODO(joshgreaves): Fix dispatcher logging the same data twice on terminal.
   dispatcher.end_episode(
       statistics_instance.StatisticsInstance(
           step=final_episode_step, action=a, reward=r, terminal=terminal))

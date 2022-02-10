@@ -104,14 +104,10 @@ class ConsoleCollectorTest(absltest.TestCase):
     # _current_episode_reward is not created until `pre_training` is called.
     with self.assertRaises(AttributeError):
       _ = collector._current_episode_reward
-    # _current_episode_length is not created until `pre_training` is called.
-    with self.assertRaises(AttributeError):
-      _ = collector._current_episode_length
     collector.begin_episode()
     self.assertTrue(
         (np.zeros(self._na) == collector._action_counts).all())
     self.assertEqual(0, collector._current_episode_reward)
-    self.assertEqual(0, collector._current_episode_length)
 
   def test_step(self):
     collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
@@ -132,7 +128,6 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(collector._log_file_writer.write.call_count, 0)
     self.assertTrue(
         (expected_action_counts == collector._action_counts).any())
-    self.assertEqual(num_steps, collector._current_episode_length)
 
   def test_step_with_fine_grained_logging(self):
     fine_grained_logging = True
@@ -162,7 +157,6 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(collector._log_file_writer.write.call_count, 10)
     self.assertTrue(
         (expected_action_counts == collector._action_counts).any())
-    self.assertEqual(num_steps, collector._current_episode_length)
 
   def test_step_with_invalid_action(self):
     collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
@@ -187,17 +181,14 @@ class ConsoleCollectorTest(absltest.TestCase):
     action_counts = np.zeros(self._na)
     action_counts[2] = 1
     stat_str = (
-        'Episode 1 reward: 3.0, episode length: 1.0, '
-        f'Action distribution: {action_counts}, '
-        'Average reward: 3.0, Average episode length: 1.0\n')
+        'Episode 0: reward: 0003.00, episode length: 1, '
+        f'action distribution: {action_counts}')
     logging.info.assert_called_with(stat_str)
     collector._log_file_writer.write.assert_called_with(stat_str)
     self.assertEqual(logging.info.call_count, 1)
     self.assertEqual(collector._log_file_writer.write.call_count, 1)
     self.assertEqual(collector._log_file_writer.close.call_count, 0)
     self.assertTrue((action_counts == collector._action_counts).any())
-    self.assertEqual(1, collector._current_episode_length)
-    self.assertEqual(1, collector._average_episode_length)
 
   def test_end_training(self):
     collector = console_collector.ConsoleCollector(self._tmpdir, self._na, 0)
@@ -209,8 +200,6 @@ class ConsoleCollectorTest(absltest.TestCase):
     self.assertEqual(logging.info.call_count, 0)
     self.assertEqual(collector._log_file_writer.write.call_count, 0)
     self.assertEqual(collector._log_file_writer.close.call_count, 1)
-    self.assertEqual(0, collector._average_episode_reward)
-    self.assertEqual(0, collector._average_episode_length)
 
   def test_full_run(self):
     fine_grained_frequency = 1
@@ -234,25 +223,23 @@ class ConsoleCollectorTest(absltest.TestCase):
         collector.step(statistics_instance.StatisticsInstance(
             step=j, action=action, reward=j*i, terminal=False))
       collector.end_episode(statistics_instance.StatisticsInstance(
-          step=num_steps, action=num_steps, reward=num_steps, terminal=True))
+          step=num_steps * (i + 1),
+          action=num_steps,
+          reward=num_steps,
+          terminal=True))
       expected_action_counts[num_steps] += 1
       action_distrib = expected_action_counts / np.sum(expected_action_counts)
       episode_reward = 4.0 if i == 0 else 32.0
-      episode_length = 4.0 if i == 0 else 8.0
-      average_reward = 4.0 if i == 0 else 18.0
-      average_episode_length = 4.0 if i == 0 else 6.0
+      episode_length = 4 if i == 0 else 8
       stat_str = (
-          f'Episode {i+1} reward: {episode_reward}, '
+          f'Episode {i}: reward: {episode_reward:07.2f}, '
           f'episode length: {episode_length}, '
-          f'Action distribution: {action_distrib}, '
-          f'Average reward: {average_reward}, '
-          f'Average episode length: {average_episode_length}\n')
+          f'action distribution: {action_distrib}')
       logging.info.assert_called_with(stat_str)
       collector._log_file_writer.write.assert_called_with(stat_str)
       self.assertEqual(logging.info.call_count, episode_length)
       self.assertEqual(collector._log_file_writer.write.call_count,
                        episode_length)
-      self.assertEqual(episode_length, collector._current_episode_length)
     collector.end_training()
     self.assertEqual(collector._log_file_writer.close.call_count, 1)
     self.assertTrue(

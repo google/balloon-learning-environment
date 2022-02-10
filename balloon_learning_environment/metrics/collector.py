@@ -54,7 +54,7 @@ class Collector(abc.ABC):
     else:
       self._base_dir = None
     self._num_actions = num_actions
-    self.num_episodes = current_episode
+    self.current_episode = current_episode
     self.summary_writer = None  # Should be set by subclass, if needed.
 
   @abc.abstractmethod

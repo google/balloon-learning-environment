@@ -63,7 +63,7 @@ flags.DEFINE_integer(
     'episodes_per_iteration', 50,
     'The number of episodes to run in one iteration. Checkpointing occurs '
     'at the end of each iteration.')
-
+flags.mark_flag_as_required('base_dir')
 FLAGS = flags.FLAGS
 
 

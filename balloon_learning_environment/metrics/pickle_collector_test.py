@@ -46,11 +46,9 @@ class PickleCollectorTest(absltest.TestCase):
 
   def test_pre_training(self):
     collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
-    # _current_episode is not created until `pre_training` is called.
-    with self.assertRaises(AttributeError):
-      _ = collector._current_episode
     collector.pre_training()
-    self.assertEqual(0, collector._current_episode)
+    self.assertEqual(0, collector.current_episode)
+    # This doesn't test for much, but at least it doesn't raise an error.
 
   def test_begin_episode(self):
     collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
@@ -75,7 +73,7 @@ class PickleCollectorTest(absltest.TestCase):
       collector.step(stat)
     self.assertEqual(pickle.dump.call_count, 0)
     self.assertEqual(expected_stats, collector._statistics)
-    self.assertEqual(0, collector._current_episode)
+    self.assertEqual(0, collector.current_episode)
 
   def test_end_episode(self):
     collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
@@ -88,7 +86,7 @@ class PickleCollectorTest(absltest.TestCase):
     self.assertEqual(expected_stats, pickle.dump.call_args[0][0])
     self.assertEqual(pickle.dump.call_count, 1)
     self.assertEqual(expected_stats, collector._statistics)
-    self.assertEqual(1, collector._current_episode)
+    self.assertEqual(1, collector.current_episode)
 
   def test_full_run(self):
     collector = pickle_collector.PickleCollector(self._tmpdir, self._na, 0)
@@ -111,7 +109,7 @@ class PickleCollectorTest(absltest.TestCase):
       self.assertEqual(expected_stats, pickle.dump.call_args[0][0])
       self.assertEqual(pickle.dump.call_count, 1)
       self.assertEqual(expected_stats, collector._statistics)
-      self.assertEqual(i + 1, collector._current_episode)
+      self.assertEqual(i + 1, collector.current_episode)
 
 
 if __name__ == '__main__':
