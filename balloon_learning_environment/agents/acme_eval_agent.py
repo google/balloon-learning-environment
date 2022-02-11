@@ -17,7 +17,11 @@
 
 from typing import Sequence, Union
 
+import acme
+from acme import specs
+from balloon_learning_environment import acme_utils
 from balloon_learning_environment.agents import agent
+import jax
 import numpy as np
 
 
@@ -29,11 +33,36 @@ class AcmeEvalAgent(agent.Agent):
     self._observation_shape = observation_shape
     self.set_mode(agent.AgentMode.EVAL)
 
+    rl_agent, _, dqn_network_fn, _, eval_policy_fn = acme_utils.create_dqn({})
+
+    observation_spec = specs.Array(
+        shape=observation_shape,
+        dtype=np.float32,
+        name='observation')
+    action_spec = specs.DiscreteArray(num_values=num_actions,
+                                      dtype=np.int32,
+                                      name='action')
+    reward_spec = specs.Array(shape=(), dtype=float, name='reward')
+    discount_spec = specs.BoundedArray(
+        shape=(), dtype=float, minimum=0.0, maximum=1.0, name='discount')
+    env_spec = acme.specs.EnvironmentSpec(
+        observation_spec,
+        action_spec,
+        reward_spec,
+        discount_spec)
+
+    dqn_network = dqn_network_fn(env_spec)
+    self._learner = rl_agent.make_learner(
+        jax.random.PRNGKey(0), dqn_network, iter([]))
+    self._actor = rl_agent.make_actor(jax.random.PRNGKey(0),
+                                      eval_policy_fn(dqn_network),
+                                      variable_source=self._learner)
+
   def begin_episode(self, observation: np.ndarray) -> int:
-    return 0
+    return self._actor.select_action(observation)
 
   def step(self, reward: float, observation: np.ndarray) -> int:
-    return 0
+    return self._actor.select_action(observation)
 
   def end_episode(self, reward: float, terminal: bool = True) -> None:
     pass
