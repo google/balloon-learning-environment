@@ -28,6 +28,7 @@ The provided agents are:
 
 from typing import Callable, Optional
 
+from balloon_learning_environment.agents import acme_eval_agent
 from balloon_learning_environment.agents import agent
 from balloon_learning_environment.agents import dqn_agent
 from balloon_learning_environment.agents import mlp_agent
@@ -38,6 +39,7 @@ from balloon_learning_environment.agents import station_seeker_agent
 
 BASE_DIR = 'balloon_learning_environment/agents/configs'
 REGISTRY = {
+    'acme_eval_agent': (acme_eval_agent.AcmeEvalAgent, None),
     'random': (agent.RandomAgent, None),
     'mlp': (mlp_agent.MLPAgent, f'{BASE_DIR}/mlp.gin'),
     'dqn': (dqn_agent.DQNAgent, f'{BASE_DIR}/dqn.gin'),
