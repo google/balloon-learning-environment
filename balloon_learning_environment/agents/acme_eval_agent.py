@@ -21,8 +21,16 @@ import acme
 from acme import specs
 from balloon_learning_environment import acme_utils
 from balloon_learning_environment.agents import agent
+import chex
 import jax
+from jax import numpy as jnp
 import numpy as np
+
+
+@chex.dataclass(frozen=True, mappable_dataclass=False)
+class _SimpleActorState:
+  rng: jnp.ndarray
+  epsilon: float
 
 
 class AcmeEvalAgent(agent.Agent):
@@ -57,6 +65,10 @@ class AcmeEvalAgent(agent.Agent):
     self._actor = rl_agent.make_actor(jax.random.PRNGKey(0),
                                       eval_policy_fn(dqn_network),
                                       variable_source=self._learner)
+
+    # Unused, but required by acme.agents.jax.dqn.actor.
+    self._actor._state = _SimpleActorState(
+        rng=jax.random.PRNGKey(0), epsilon=0.0)
 
   def begin_episode(self, observation: np.ndarray) -> int:
     return self._actor.select_action(observation)
