@@ -15,10 +15,13 @@
 
 """Evaluation agent for ACME."""
 
+import os.path as osp
 from typing import Sequence, Union
 
+from absl import logging
 import acme
 from acme import specs
+from acme.tf import savers
 from balloon_learning_environment import acme_utils
 from balloon_learning_environment.agents import agent
 import chex
@@ -41,7 +44,8 @@ class AcmeEvalAgent(agent.Agent):
     self._observation_shape = observation_shape
     self.set_mode(agent.AgentMode.EVAL)
 
-    rl_agent, _, dqn_network_fn, _, eval_policy_fn = acme_utils.create_dqn({})
+    self._rl_agent, _, dqn_network_fn, _, self._eval_policy = (
+        acme_utils.create_dqn({}))
 
     observation_spec = specs.Array(
         shape=observation_shape,
@@ -59,16 +63,21 @@ class AcmeEvalAgent(agent.Agent):
         reward_spec,
         discount_spec)
 
-    dqn_network = dqn_network_fn(env_spec)
-    self._learner = rl_agent.make_learner(
-        jax.random.PRNGKey(0), dqn_network, iter([]))
-    self._actor = rl_agent.make_actor(jax.random.PRNGKey(0),
-                                      eval_policy_fn(dqn_network),
-                                      variable_source=self._learner)
+    self._dqn_network = dqn_network_fn(env_spec)
+    self._learner = self._rl_agent.make_learner(
+        jax.random.PRNGKey(0), self._dqn_network, iter([]))
+    self._actor = self._rl_agent.make_actor(
+        jax.random.PRNGKey(0),
+        self._eval_policy(self._dqn_network),
+        variable_source=self._learner)
+    self._add_actor_state()
 
+  def _add_actor_state(self):
     # Unused, but required by acme.agents.jax.dqn.actor.
+    # pylint: disable=protected-access
     self._actor._state = _SimpleActorState(
         rng=jax.random.PRNGKey(0), epsilon=0.0)
+    # pylint: enable=protected-access
 
   def begin_episode(self, observation: np.ndarray) -> int:
     return self._actor.select_action(observation)
@@ -85,4 +94,27 @@ class AcmeEvalAgent(agent.Agent):
       raise ValueError('AcmeEvalAgent only supports EVAL mode.')
 
   def load_checkpoint(self, checkpoint_dir: str, iteration_number: int) -> None:
-    pass
+    learner = self._rl_agent.make_learner(
+        jax.random.PRNGKey(0), self._dqn_network, iter([]))
+    checkpointer = savers.Checkpointer({'learner': learner},
+                                       time_delta_minutes=30,
+                                       subdirectory='learner',
+                                       directory=checkpoint_dir,
+                                       max_to_keep=400,  # Large enough number.
+                                       add_uid=False)
+    # pylint: disable=protected-access
+    checkpoint_dir = osp.dirname(
+        checkpointer._checkpoint_manager.latest_checkpoint)
+    # pylint: enable=protected-access
+    checkpoint_to_reload = osp.join(checkpoint_dir, f'ckpt-{iteration_number}')
+    # Checkpointer always restores the latest agent, so we re-restore here to
+    # force a particular iteration number.
+    logging.info('Attempting to restore checkpoint: %d',
+                 iteration_number)
+    # pylint: disable=protected-access
+    checkpointer._checkpoint.restore(checkpoint_to_reload)
+    # pylint: enable=protected-access
+    self._actor = self._rl_agent.make_actor(
+        jax.random.PRNGKey(0), self._eval_policy(self._dqn_network),
+        variable_source=learner)
+    self._add_actor_state()
