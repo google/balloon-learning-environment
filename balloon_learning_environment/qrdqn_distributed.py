@@ -24,6 +24,7 @@ from acme import core
 from acme import environment_loop
 from acme import specs
 from acme.jax import networks as networks_lib
+from acme.jax import types
 from acme.jax.layouts import distributed_layout
 from acme.utils import counting
 from acme.utils import loggers
@@ -43,7 +44,7 @@ flags.DEFINE_integer('max_episode_length', 960,
 
 
 def default_evaluator(
-    environment_factory: distributed_layout.EnvironmentFactory,
+    environment_factory: types.EnvironmentFactory,
     network_factory: distributed_layout.NetworkFactory,
     policy_factory: distributed_layout.PolicyFactory
 ) -> distributed_layout.EvaluatorFactory:
