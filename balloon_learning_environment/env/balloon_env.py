@@ -301,9 +301,7 @@ class BalloonEnv(gym.Env):
 
 
 def register_env():
-  gym.register(
-      id='BalloonLearningEnvironment-v0',
-      entry_point='balloon_learning_environment.env.balloon_env:BalloonEnv')
+  gym.register(id='BalloonLearningEnvironment-v0', entry_point=BalloonEnv)
 
 
 register_env()
