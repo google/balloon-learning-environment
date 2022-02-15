@@ -88,6 +88,12 @@ cmdclass = {
     'develop': Develop,
 }
 
+entry_points = {
+    'gym.envs': [
+        '__root__=balloon_learning_environment.env.balloon_env:register_env'
+    ]
+}
+
 
 setuptools.setup(
     name='balloon_learning_environment',
@@ -104,5 +110,6 @@ setuptools.setup(
     package_data={
         '': ['*.msgpack', '*.pb', '*.gin'],
     },
+    entry_points=entry_points,
     python_requires='>=3.7',
 )

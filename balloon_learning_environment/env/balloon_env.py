@@ -20,7 +20,7 @@ This provides the RL layer on top of the simulator.
 
 import math
 import time
-from typing import Any, Callable, Mapping, Optional, Text, Tuple, Union
+from typing import Any, Callable, Mapping, Optional, Text, Tuple, Union, Dict
 
 from balloon_learning_environment.env import balloon_arena
 from balloon_learning_environment.env import features
@@ -152,8 +152,7 @@ class BalloonEnv(gym.Env):
       self.metadata = {'render.modes': self._renderer.render_modes}
 
     # Use time in microseconds if a seed is not supplied.
-    self.seed(seed if seed is not None else int(time.time() * 1e6))
-    self.reset()
+    self.reset(seed=seed if seed is not None else int(time.time() * 1e6))
 
   def step(self,
            action: int) -> Tuple[np.ndarray, float, bool, Mapping[str, Any]]:
@@ -179,28 +178,38 @@ class BalloonEnv(gym.Env):
     reward = self._reward_fn(simulator_state)
 
     # Prepare is_terminal
-    balloon_state = simulator_state.balloon_state
-    out_of_power = balloon_state.status == balloon.BalloonStatus.OUT_OF_POWER
-    envelope_burst = (
-        balloon_state.status == balloon.BalloonStatus.BURST)
-    zeropressure = (
-        balloon_state.status == balloon.BalloonStatus.ZEROPRESSURE)
-    is_terminal = out_of_power or envelope_burst or zeropressure
+    info = self._get_info(simulator_state.balloon_state)
+    is_terminal = (
+        info['out_of_power']
+        or info['envelope_burst']
+        or info['zeropressure']
+    )
 
     self._global_iteration += 1
 
-    return observation, reward, is_terminal, {
-        'out_of_power': out_of_power,
-        'envelope_burst': envelope_burst,
-        'zeropressure': zeropressure,
-        'time_elapsed': balloon_state.time_elapsed}
+    return observation, reward, is_terminal, info
 
-  def reset(self) -> np.ndarray:
+  def reset(
+      self,
+      *,
+      seed: Optional[int] = None,
+      return_info: bool = False
+  ) -> Union[np.ndarray, Tuple[np.ndarray, Mapping[str, Any]]]:
     """Resets the environment.
 
+    Args:
+      seed: Seed to re-seed environment on reset.
+      return_info: return info dictionary with initial observation.
+
     Returns:
-      The initial observation.
+      If `return_info` is True:
+        A tuple consisting of initial_observation and the info dictionary.
+      Otherwise:
+        The initial observation.
     """
+    if seed is not None:
+      self.seed(seed)
+
     self._rng, arena_rng = jax.random.split(self._rng)
     observation = self.arena.reset(arena_rng)
 
@@ -208,7 +217,13 @@ class BalloonEnv(gym.Env):
       self._renderer.reset()
       self._renderer.step(self.arena.get_simulator_state())
 
-    return observation
+    if return_info:
+      simulator_state = self.get_simulator_state()
+      info = self._get_info(simulator_state.balloon_state)
+
+      return observation, info
+    else:
+      return observation
 
   def render(self, mode: str = 'human') -> Union[None, np.ndarray, Text]:
     """Renders a frame.
@@ -262,8 +277,20 @@ class BalloonEnv(gym.Env):
     """Gets the simulator state."""
     return self.arena.get_simulator_state()
 
+  def _get_info(self, balloon_state: balloon.BalloonState) -> Dict[str, Any]:
+    out_of_power = balloon_state.status == balloon.BalloonStatus.OUT_OF_POWER
+    envelope_burst = balloon_state.status == balloon.BalloonStatus.BURST
+    zeropressure = balloon_state.status == balloon.BalloonStatus.ZEROPRESSURE
+
+    return {
+        'out_of_power': out_of_power,
+        'envelope_burst': envelope_burst,
+        'zeropressure': zeropressure,
+        'time_elapsed': balloon_state.time_elapsed
+    }
+
   def __str__(self) -> str:
-    return 'SleewpalkEnv'
+    return 'BalloonEnv'
 
   def __enter__(self) -> gym.Env:
     return self
@@ -273,6 +300,10 @@ class BalloonEnv(gym.Env):
     return False  # Reraise any exceptions
 
 
-gym.register(
-    id='BalloonLearningEnvironment-v0',
-    entry_point='balloon_learning_environment.env.balloon_env:BalloonEnv')
+def register_env():
+  gym.register(
+      id='BalloonLearningEnvironment-v0',
+      entry_point='balloon_learning_environment.env.balloon_env:BalloonEnv')
+
+
+register_env()
