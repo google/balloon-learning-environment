@@ -133,3 +133,27 @@ You can also try evaluation on other suites:
 
 For more available suites, see
 `suites.py <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/suites.py>`_.
+
+Training Acme Agents
+####################
+
+The BLE also includes examples for training
+`ACME <https://github.com/deepmind/acme>`_ agents, but these use their own
+binary. To train the QR-DQN agent with Acme on a single-GPU machine, use
+the following command:
+
+.. code-block:: console
+
+   python -m balloon_learning_environment.train_acme_qrdqn
+
+**Experimental:** To run distributed training of Acme's QR-DQN with Google
+cloud's Vertex AI, first follow the instructions
+`here <https://github.com/deepmind/xmanager#create-a-gcp-project>`_, and then
+run the following command:
+
+.. code-block:: console
+
+   python -m balloon_learning_environment.distributed_train_acme_qrdqn \
+     --num_actors=10 \
+     --lp_launch_type=vertex_ai
+
