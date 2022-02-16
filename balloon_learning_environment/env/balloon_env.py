@@ -298,10 +298,3 @@ class BalloonEnv(gym.Env):
   def __exit__(self, *args: Any) -> bool:
     self.close()
     return False  # Reraise any exceptions
-
-
-def register_env():
-  gym.register(id='BalloonLearningEnvironment-v0', entry_point=BalloonEnv)
-
-
-register_env()

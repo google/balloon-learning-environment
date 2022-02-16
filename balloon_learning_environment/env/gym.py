@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Balloon Learning Environment root package exports."""
-from balloon_learning_environment.env import gym as _ble_gym
+"""Balloon Learning Environment gym utilities."""
+from balloon_learning_environment.env import balloon_env
+from gym.envs import registration
 
-# Register Gym environment. Users can import the environment as:
-#   gym.make('balloon_learning_environment:BalloonLearningEnvironment-v0')
-_ble_gym.register_env()
 
-# We don't export anything
-__all__ = []
+def register_env() -> None:
+  """Register the Gym environment."""
+  registration.register(
+      id='BalloonLearningEnvironment-v0', entry_point=balloon_env.BalloonEnv)
