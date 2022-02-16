@@ -47,7 +47,7 @@ directory where you cloned the repository:
 
 ```
 $ pip install --upgrade pip
-$ pip install .[dopamine,acme]
+$ pip install .[acme]
 ```
 
 ## Ensure the BLE is Using Your GPU/TPU

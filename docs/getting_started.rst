@@ -21,18 +21,18 @@ and then install the balloon_learning_environment package:
 
    pip install balloon_learning_environment
 
-To install with Dopamine and/or ACME packages, run:
+To install with the acme package, run:
 
 .. code-block:: console
 
-   pip install balloon_learning_environment[dopamine,acme]
+   pip install balloon_learning_environment[acme]
 
 To install from GitHub directly, run the following commands from the root
 directory where you cloned the repository:
 
 .. code-block:: console
 
-   pip install .[dopamine,acme]
+   pip install .[acme]
 
 
 Ensure the BLE is Using Your GPU/TPU
@@ -126,11 +126,14 @@ You can also try evaluation on other suites:
 
 * `big_eval`: This suite containes 10,000 seeds and gives a good signal of
   how well an agent station-keeps. However, this suite may take up to
-  300 hours on a single GPU!
+  300 hours on a single GPU! We suggest splitting the work up over
+  multiple shards using the `shard_idx` and `num_shards` flags.
 * `small_eval`: This is a very useful evaluation suite to run. It contains
   100 seeds and gives a rough view into how well an agent performs. On abui
   single GPU, it may take around 3 hours.
 
+For more options for evaluation runs, see
+`eval.py <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/eval.py>`_.
 For more available suites, see
 `suites.py <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/suites.py>`_.
 

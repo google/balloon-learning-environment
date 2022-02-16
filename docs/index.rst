@@ -7,8 +7,8 @@ Balloon Learning Environment
 ============================
 
 .. note::
-   The Balloon Learning Environment documentation is still under development.
-   Let us know if there is a page you'd like to see here!
+   We are working hard to improve the Balloon Learning Environment
+   documentation. Please let us know if there is a page you'd like to see here!
 
 The Balloon Learning Environment (BLE) is a simulator for stratospheric
 balloons. It is designed as a challenge environment for deep reinforcement
