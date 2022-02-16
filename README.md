@@ -24,11 +24,11 @@ $ pip install --upgrade pip
 $ pip install balloon_learning_environment
 ```
 
-To install with `Dopamine` and/or `ACME` packages:
+To install with the `acme` package:
 
 ```
 $ pip install --upgrade pip
-$ pip install balloon_learning_environment[dopamine,acme]
+$ pip install balloon_learning_environment[acme]
 ```
 
 Once the package has been installed, you can test it runs correctly by

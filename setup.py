@@ -25,6 +25,7 @@ description = (current_directory / 'README.md').read_text()
 
 core_requirements = [
     'absl-py',
+    'dopamine-rl >= 4.0.0',
     'flax',
     'gin-config',
     'gym',
@@ -36,10 +37,6 @@ core_requirements = [
     'tensorflow',
     'tensorflow-probability',
     'transitions',
-]
-
-dopamine_requirements = [
-    'dopamine-rl >= 4.0.0',
 ]
 
 acme_requirements = [
@@ -65,8 +62,7 @@ def generate_requirements_file(path=None):
   if not path:
     path = os.path.join(os.path.dirname(__file__), 'acme_requirements.txt')
   with open(path, 'w') as f:
-    for package in set(core_requirements + dopamine_requirements +
-                       acme_requirements):
+    for package in set(core_requirements + acme_requirements):
       f.write(f'{package}\n')
 
 
@@ -99,12 +95,11 @@ setuptools.setup(
     name='balloon_learning_environment',
     long_description=description,
     long_description_content_type='text/markdown',
-    version='0.1.2',
+    version='0.1.4',
     cmdclass=cmdclass,
     packages=setuptools.find_packages(),
     install_requires=core_requirements,
     extras_require={
-        'dopamine': dopamine_requirements,
         'acme': acme_requirements,
     },
     package_data={
