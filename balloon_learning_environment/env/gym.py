@@ -14,11 +14,27 @@
 # limitations under the License.
 
 """Balloon Learning Environment gym utilities."""
-from balloon_learning_environment.env import balloon_env
-from gym.envs import registration
+import contextlib
 
 
 def register_env() -> None:
   """Register the Gym environment."""
-  registration.register(
-      id='BalloonLearningEnvironment-v0', entry_point=balloon_env.BalloonEnv)
+  # We need to import Gym's registration module inline or else we'll
+  # get a circular dependency that will result in an error when importing gym
+  from gym.envs import registration  # pylint: disable=g-import-not-at-top
+
+  env_id = 'BalloonLearningEnvironment-v0'
+  env_entry_point = 'balloon_learning_environment.env.balloon_env:BalloonEnv'
+  # We guard registration by checking if our env is already registered
+  # This is necesarry because the plugin system will load our module
+  # which also calls this function. If multiple `register()` calls are
+  # made this will result in a warning to the user.
+  registered = env_id in registration.registry.env_specs
+
+  if not registered:
+    with contextlib.ExitStack() as stack:
+      # This is a workaround for Gym 0.21 which didn't support
+      # registering into the root namespace with the plugin system.
+      if hasattr(registration, 'namespace'):
+        stack.enter_context(registration.namespace(None))
+      registration.register(id=env_id, entry_point=env_entry_point)
