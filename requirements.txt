@@ -27,8 +27,8 @@ h5py==3.1.0
 idna==3.3
 importlib-metadata==4.8.1
 importlib-resources==5.4.0
-jax==0.2.24
-jaxlib==0.1.73
+jax==0.3.0
+jaxlib==0.3.0
 joblib==1.1.0
 keras==2.7.0
 Keras-Preprocessing==1.1.2
@@ -66,7 +66,7 @@ tensorboard-plugin-wit==1.8.0
 tensorflow==2.7.0rc1
 tensorflow-estimator==2.7.0
 tensorflow-io-gcs-filesystem==0.21.0
-tensorflow-probability==0.14.1
+tensorflow-probability==0.16.0
 termcolor==1.1.0
 tf-slim==1.1.0
 tfp-nightly==0.15.0.dev20211104
