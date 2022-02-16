@@ -28,7 +28,6 @@ The provided agents are:
 
 from typing import Callable, Optional
 
-from balloon_learning_environment.agents import acme_eval_agent
 from balloon_learning_environment.agents import agent
 from balloon_learning_environment.agents import dqn_agent
 from balloon_learning_environment.agents import mlp_agent
@@ -39,7 +38,6 @@ from balloon_learning_environment.agents import station_seeker_agent
 
 BASE_DIR = 'balloon_learning_environment/agents/configs'
 REGISTRY = {
-    'acme_eval_agent': (acme_eval_agent.AcmeEvalAgent, None),
     'random': (agent.RandomAgent, None),
     'mlp': (mlp_agent.MLPAgent, f'{BASE_DIR}/mlp.gin'),
     'dqn': (dqn_agent.DQNAgent, f'{BASE_DIR}/dqn.gin'),
@@ -51,10 +49,22 @@ REGISTRY = {
     'random_walk': (random_walk_agent.RandomWalkAgent, None),
 }
 
+try:
+  from balloon_learning_environment.agents import acme_eval_agent  # pylint: disable=g-import-not-at-top
+  REGISTRY['acme_eval_agent'] = (acme_eval_agent.AcmeEvalAgent, None)
+except ModuleNotFoundError:
+  # This is most likely because acme dependencies aren't installed.
+  pass
+_ACME_AGENTS = frozenset({'acme_eval_agent'})
+
 
 def agent_constructor(name: str) -> Callable[..., agent.Agent]:
   if name not in REGISTRY:
-    raise ValueError(f'Agent {name} not recognized')
+    if name in _ACME_AGENTS:
+      raise ValueError(f'Agent {name} not available. '
+                       'Have you tried installing the acme dependencies?')
+    else:
+      raise ValueError(f'Agent {name} not recognized')
   return REGISTRY[name][0]
 
 
