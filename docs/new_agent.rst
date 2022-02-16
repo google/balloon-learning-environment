@@ -48,6 +48,23 @@ Make sure to override all the functions required and recommended by the
 There are several good examples in the
 :doc:`balloon_learning_environment.agents<src/agents>` module.
 
+
+Alternatively, you can use one of the agents provided with the BLE:
+
+.. code-block:: python
+
+   from balloon_learning_environment import train_lib
+   from balloon_learning_environment.env import balloon_env
+   from balloon_learning_environment.utils import run_helpers
+
+   agent_name = 'quantile'
+   env = gym.make('BalloonLearningEnvironment-v0')
+   run_helpers.bind_gin_variables(agent_name)
+   agent = run_helpers.create_agent(agent_name,
+                                    env.action_space.n,
+                                    env.observation_space.shape)
+
+
 Create Training Script
 **********************
 
