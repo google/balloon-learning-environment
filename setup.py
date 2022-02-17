@@ -95,7 +95,7 @@ setuptools.setup(
     name='balloon_learning_environment',
     long_description=description,
     long_description_content_type='text/markdown',
-    version='0.1.4',
+    version='1.0.0',
     cmdclass=cmdclass,
     packages=setuptools.find_packages(),
     install_requires=core_requirements,
