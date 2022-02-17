@@ -16,7 +16,7 @@ the environment, import the balloon environment and use gym to create it:
 
 
 This will give you a new
-:py:class:`BalloonEnv<balloon_learning_environment.env.balloon_env.BalloonEnv>`
+`BalloonEnv <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/env/balloon_env.py>`_
 object that follows the gym environment interface. Before we run the
 environment we can inspect the observation and action spaces:
 
@@ -70,20 +70,20 @@ Configuring the Environment
 
 The environment may be configured to give custom behavior. To see all
 options for configuring the environment, see the
-:py:class:`BalloonEnv<balloon_learning_environment.env.balloon_env.BalloonEnv>`
+`BalloonEnv <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/env/balloon_env.py>`_
 constructor. Here, we highlight important options.
 
 First, the
-:py:class:`FeatureConstructor<balloon_learning_environment.env.features.FeatureConstructor>`
+`FeatureConstructor <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/env/features.py>`_
 class may be swapped out. The feature constructor receives observations
 from the simulator at each step, and returns features when required. This
 setup allows a feature constructor to maintain its own state, and use the
 simulator history to create a feature vector. The default feature constructor
 is the
-:py:class:`PerciatelliFeatureConstructor<balloon_learning_environment.env.features.PerciatelliFeatureConstructor>`.
+`PerciatelliFeatureConstructor <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/env/features.py>`_.
 
 The reward function can also be swapped out. The default reward function,
-:py:func:`perciatelli_reward_function<balloon_learning_environment.env.balloon_env.perciatelli_reward_function>`
+`perciatelli_reward_function <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/env/balloon_env.py>`_
 gives a reward of 1.0 as long as the agent is in the stationkeeping readius.
 The reward decays exponentially outside of this radius.
 

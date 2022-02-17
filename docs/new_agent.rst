@@ -4,7 +4,7 @@ Training and Evaluating a New Agent
 There are two options for training/evaluating a new agent:
 
 #. Create an agent following the
-   :py:class:`Agent<balloon_learning_environment.agents.agent.Agent>`
+   `Agent <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents/agent.py>`_
    interface and use our scripts.
 #. Use the Balloon Learning Environment gym environment in your own framework.
 
@@ -18,18 +18,18 @@ Using the Agent Interface
 To make a new agent using our framework, you should do the following:
 
 #. Create an agent following the
-   :py:class:`Agent<balloon_learning_environment.agents.agent.Agent>`
+   `Agent <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents/agent.py>`_
    interface.
 #. Create a training script that uses
-   :py:func:`train_lib.run_training_loop<balloon_learning_environment.train_lib.run_training_loop>`.
+   `train_lib.run_training_loop <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/train_lib.py>`_.
 #. Create an evaluation script that uses
-   :py:func:`eval_lib.evaluate_agent<balloon_learning_environment.eval.eval_lib.eval_agent>`.
+   `eval_lib.eval_agent <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/eval_lib.py>`_.
 
 Creating an Agent
 *****************
 
 First, create an agent following the
-:py:class:`Agent<balloon_learning_environment.agents.agent.Agent>`
+`Agent <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents/agent.py>`_
 interface. For example:
 
 .. code-block:: python
@@ -44,9 +44,10 @@ interface. For example:
        ...
 
 Make sure to override all the functions required and recommended by the
-:py:class:`Agent<balloon_learning_environment.agents.agent.Agent>` interface.
+`Agent <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents/agent.py>`_
 There are several good examples in the
-:doc:`balloon_learning_environment.agents<src/agents>` module.
+`agents <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents>`_
+module.
 
 
 Alternatively, you can use one of the agents provided with the BLE:
@@ -69,7 +70,7 @@ Create Training Script
 **********************
 
 Once you have created your agent, it should be ready to train by calling
-:py:func:`train_lib.run_training_loop<balloon_learning_environment.train_lib.run_training_loop>`.
+`train_lib.run_training_loop <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/train_lib.py>`_.
 You'll need to create a launch script that sets up the environment and agent
 and calls this function.
 
@@ -97,21 +98,20 @@ look something like this:
 
 
 You can optionally add
-:py:class:`Collector<balloon_learning_environment.metrics.collector.Collector>`
+`Collectors <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/metrics/collector.py>`_
 to generate statistics during training. We include a set of collectors to
 
 #. print statistics to the console with
-   :py:class:`ConsoleCollector<balloon_learning_environment.metrics.console_collector.ConsoleCollector>`
+   `ConsoleCollector <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/metrics/console_collector.py>`_.
 #. save statistics to a pickle file with
-   :py:class:`PickleCollector<balloon_learning_environment.metrics.pickle_collector.PickleCollector>`
+   `PickleCollector <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/metrics/pickle_collector.py>`_.
 #. write to Tensorboard event files with
-   :py:class:`TensorboardCollector<balloon_learning_environment.metrics.tensorboard_collector.TensorboardCollector>`
+   `TensorboardCollector <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/metrics/tensorboard_collector.py>`_.
 
 You can create your own by following the
-:py:class:`Collector<balloon_learning_environment.metrics.collector.Collector>`
-signature and passing its constructor to the
-:py:class:`CollectorDispatcher<balloon_learning_environment.metrics.collector_dispatcher.CollectorDispatcher>`
-.
+`Collector <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/metrics/collector.py>`_
+interface and passing its constructor to the
+`CollectorDispatcher <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/metrics/collector_dispatcher.py>`_.
 
 
 
@@ -119,9 +119,9 @@ Create Evaluation Script
 ************************
 
 If your agent follows the
-:py:class:`Agent<balloon_learning_environment.agents.agent.Agent>`
+`Agent <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/agents/agent.py>`_
 interface, you can also make use of
-:py:func:`eval_lib.evaluate_agent<balloon_learning_environment.eval.eval_lib.eval_agent>`.
+`eval_lib.eval_agent <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/eval/eval_lib.py>`_.
 Once again, you'll need to create a launch script that sets up the environment
 and agent, and then calls the function.
 
@@ -172,4 +172,4 @@ framework or experiment.
 
 The environment follows the standard gym interface. The type of the returned
 environment object is
-:py:class:`BalloonEnv <balloon_learning_environment.env.balloon_env.BalloonEnv>`.
+`BalloonEnv <https://github.com/google/balloon-learning-environment/blob/master/balloon_learning_environment/env/balloon_env.py>`_.

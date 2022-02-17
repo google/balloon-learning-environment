@@ -24,16 +24,6 @@ learning algorithms.
    environment
    benchmarks
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Public API:
-
-   src/agents
-   src/env
-   src/eval_lib
-   src/metrics
-   src/train_lib
-
 
 Indices and tables
 ==================
