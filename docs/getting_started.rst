@@ -141,15 +141,15 @@ Training Acme Agents
 ####################
 
 The BLE also includes examples for training
-`ACME <https://github.com/deepmind/acme>`_ agents, but these use their own
-binary. To train the QR-DQN agent with Acme on a single-GPU machine, use
+`acme <https://github.com/deepmind/acme>`_ agents, but these use their own
+binary. To train the QR-DQN agent with acme on a single-GPU machine, use
 the following command:
 
 .. code-block:: console
 
    python -m balloon_learning_environment.train_acme_qrdqn
 
-**Experimental:** To run distributed training of Acme's QR-DQN with Google
+**Experimental:** To run distributed training of acme's QR-DQN with Google
 cloud's Vertex AI, first follow the instructions
 `here <https://github.com/deepmind/xmanager#create-a-gcp-project>`_, and then
 run the following command:
