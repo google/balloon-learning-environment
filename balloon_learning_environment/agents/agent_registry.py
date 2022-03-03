@@ -58,6 +58,7 @@ except ModuleNotFoundError:
 _ACME_AGENTS = frozenset({'acme_eval_agent'})
 
 
+
 def agent_constructor(name: str) -> Callable[..., agent.Agent]:
   if name not in REGISTRY:
     if name in _ACME_AGENTS:
