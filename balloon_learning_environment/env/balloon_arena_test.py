@@ -17,8 +17,6 @@
 
 from absl.testing import absltest
 from absl.testing import parameterized
-from balloon_learning_environment.env import balloon_arena
-from balloon_learning_environment.env import features
 from balloon_learning_environment.utils import constants
 from balloon_learning_environment.utils import test_helpers
 from balloon_learning_environment.utils import units
@@ -30,8 +28,8 @@ class BalloonArenaTest(parameterized.TestCase):
   # TODO(joshgreaves): Patch PerciatelliFeatureConstructor, it's too slow.
 
   def test_int_seeding_gives_determinisic_balloon_initialization(self):
-    arena1 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
-    arena2 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena1 = test_helpers.create_arena()
+    arena2 = test_helpers.create_arena()
 
     arena1.reset(201)
     arena2.reset(201)
@@ -41,8 +39,8 @@ class BalloonArenaTest(parameterized.TestCase):
     test_helpers.compare_balloon_states(balloon_state1, balloon_state2)
 
   def test_array_seeding_gives_determinisic_balloon_initialization(self):
-    arena1 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
-    arena2 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena1 = test_helpers.create_arena()
+    arena2 = test_helpers.create_arena()
 
     arena1.reset(jax.random.PRNGKey(201))
     arena2.reset(jax.random.PRNGKey(201))
@@ -51,8 +49,8 @@ class BalloonArenaTest(parameterized.TestCase):
     test_helpers.compare_balloon_states(balloon_state1, balloon_state2)
 
   def test_different_seeds_gives_different_initialization(self):
-    arena1 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
-    arena2 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena1 = test_helpers.create_arena()
+    arena2 = test_helpers.create_arena()
 
     arena1.reset(201)
     arena2.reset(202)
@@ -62,14 +60,14 @@ class BalloonArenaTest(parameterized.TestCase):
         balloon_state1, balloon_state2, check_not_equal=['x', 'y'])
 
   def test_random_seeding_doesnt_throw_exception(self):
-    arena = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena = test_helpers.create_arena()
 
     arena.reset()
     # Succeeds if no error was thrown
 
   @parameterized.named_parameters((str(x), x) for x in (1, 5, 28, 90, 106, 378))
   def test_balloon_is_initialized_within_200km(self, seed: int):
-    arena = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena = test_helpers.create_arena()
 
     arena.reset(seed)
     balloon_state = arena.get_simulator_state().balloon_state
@@ -79,7 +77,7 @@ class BalloonArenaTest(parameterized.TestCase):
 
   @parameterized.named_parameters((str(x), x) for x in (1, 5, 28, 90, 106, 378))
   def test_balloon_is_initialized_within_valid_pressure_range(self, seed: int):
-    arena = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena = test_helpers.create_arena()
 
     arena.reset(seed)
     balloon_state = arena.get_simulator_state().balloon_state

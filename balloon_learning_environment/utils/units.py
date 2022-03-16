@@ -189,6 +189,12 @@ class Velocity:
   def __str__(self) -> str:
     return f'{self.mps} m/s'
 
+  def __truediv__(self, other: float) -> 'Velocity':
+    if isinstance(other, (int, float)):
+      return Velocity(mps=self.mps / other)
+    else:
+      raise NotImplementedError(f'Cannot divide velocity by {type(other)}')
+
 
 class Energy(object):
   """A compact energy class."""

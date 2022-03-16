@@ -18,6 +18,7 @@
 This provides the RL layer on top of the simulator.
 """
 
+import functools
 import math
 import time
 from typing import Any, Callable, Mapping, Optional, Text, Tuple, Union, Dict
@@ -25,6 +26,7 @@ from typing import Any, Callable, Mapping, Optional, Text, Tuple, Union, Dict
 from balloon_learning_environment.env import balloon_arena
 from balloon_learning_environment.env import features
 from balloon_learning_environment.env import generative_wind_field  # pylint: disable=unused-import
+from balloon_learning_environment.env import grid_based_wind_field
 from balloon_learning_environment.env import simulator_data
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.env.balloon import balloon
@@ -117,7 +119,9 @@ class BalloonEnv(gym.Env):
           [wind_field.WindField, standard_atmosphere.Atmosphere],
           features.FeatureConstructor] = features.PerciatelliFeatureConstructor,
       wind_field_factory: Callable[
-          [], wind_field.WindField] = generative_wind_field.GenerativeWindField,
+          [], wind_field.WindField] = functools.partial(
+              grid_based_wind_field.GridBasedWindField,
+              generative_wind_field.GenerativeWindFieldSampler),
       seed: Optional[int] = None,
       renderer: Optional[randerer_lib.Renderer] = None):
     """Constructs a Balloon Learning Environment Station Keeping Environment.

@@ -75,7 +75,7 @@ class BalloonEnvTest(parameterized.TestCase):
     self.assertTrue(info['out_of_power'])
 
   def test_time_elapsed(self):
-    arena = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena = test_helpers.create_arena()
     time_elapsed = dt.timedelta()
     test_helpers.bind_environment_gin_parameters(arena=arena, seed=1)
     env = balloon_env.BalloonEnv()
@@ -94,7 +94,7 @@ class BalloonEnvTest(parameterized.TestCase):
     x = units.Distance(km=x_km)
     y = units.Distance(km=y_km)
     balloon_state = self.create_balloon(x, y).state
-    arena = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena = test_helpers.create_arena()
     arena.get_balloon_state = mock.MagicMock(return_value=balloon_state)
 
     test_helpers.bind_environment_gin_parameters(
@@ -121,7 +121,7 @@ class BalloonEnvTest(parameterized.TestCase):
     y_pos = outside_radius_distance * np.sin(angle)
     balloon_state = self.create_balloon(x_pos, y_pos).state
 
-    arena = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena = test_helpers.create_arena()
     arena.get_balloon_state = mock.MagicMock(return_value=balloon_state)
 
     test_helpers.bind_environment_gin_parameters(
@@ -144,9 +144,9 @@ class BalloonEnvTest(parameterized.TestCase):
     balloon_state1 = self.create_balloon(x=x1, y=y1).state
     balloon_state2 = self.create_balloon(x=x2, y=y2).state
 
-    arena1 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena1 = test_helpers.create_arena()
     arena1.get_balloon_state = mock.MagicMock(return_value=balloon_state1)
-    arena2 = balloon_arena.BalloonArena(features.PerciatelliFeatureConstructor)
+    arena2 = test_helpers.create_arena()
     arena2.get_balloon_state = mock.MagicMock(return_value=balloon_state2)
 
     test_helpers.bind_environment_gin_parameters(

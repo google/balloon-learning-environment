@@ -17,6 +17,7 @@
 
 import dataclasses
 import datetime as dt
+import functools
 from typing import Callable, Optional, Sequence
 
 from absl.testing import absltest
@@ -36,6 +37,12 @@ import numpy as np
 import s2sphere as s2
 
 START_DATE_TIME = units.datetime(2013, 3, 25, 9, 25, 32)
+
+
+create_arena = functools.partial(
+    balloon_arena.BalloonArena,
+    features.PerciatelliFeatureConstructor,
+    wind_field.SimpleStaticWindField())
 
 
 def bind_environment_gin_parameters(

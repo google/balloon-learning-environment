@@ -127,8 +127,7 @@ class BalloonArena(BalloonArenaInterface):
                feature_constructor_factory: Callable[
                    [wind_field.WindField, standard_atmosphere.Atmosphere],
                    features.FeatureConstructor],
-               wind_field_instance: wind_field.WindField = wind_field
-               .SimpleStaticWindField(),
+               wind_field_instance: wind_field.WindField,
                seed: Optional[int] = None):
     """BalloonArena constructor.
 

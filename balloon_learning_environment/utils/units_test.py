@@ -190,6 +190,13 @@ class VelocityTest(parameterized.TestCase):
     self.assertIsInstance(d, units.Distance)
     self.assertAlmostEqual(d.m, 200.0)
 
+  def test_velocity_divided_by_float_gives_velocity(self):
+    v = units.Velocity(mps=10.0)
+
+    v = v / 2.0
+    self.assertIsInstance(v, units.Velocity)
+    self.assertEqual(v.mps, 5.0)
+
 
 class EnergyTest(absltest.TestCase):
 

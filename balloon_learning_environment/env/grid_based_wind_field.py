@@ -13,96 +13,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A wind field created by a generative model."""
+"""A wind field that interpolates from a grid."""
 
 import datetime as dt
 from typing import List, Sequence, Union
 
-from absl import logging
 from balloon_learning_environment.env import grid_wind_field_sampler
 from balloon_learning_environment.env import wind_field
-from balloon_learning_environment.generative import vae
-from balloon_learning_environment.models import models
 from balloon_learning_environment.utils import units
-import flax
-import jax
 from jax import numpy as jnp
 import numpy as np
 import scipy.interpolate
 
 
-class GenerativeWindFieldSampler(grid_wind_field_sampler.GridWindFieldSampler):
-  """A class that samples wind fields from a VAE."""
+class GridBasedWindField(wind_field.WindField):
+  """A wind field that interpolates from a grid."""
 
-  def __init__(self):
-    # TODO(joshgreaves): Add options for loading other sets of parameters.
-    serialized_params = models.load_offlineskies22()
-    self.params = flax.serialization.msgpack_restore(serialized_params)
+  def __init__(
+      self,
+      wind_field_sampler: grid_wind_field_sampler.GridWindFieldSampler):
+    """GridBasedWindField Constructor.
 
-  @property
-  def field_shape(self) -> vae.FieldShape:
-    return vae.FieldShape()
-
-  def sample_field(self,
-                   key: jnp.ndarray,
-                   date_time: dt.datetime) -> np.ndarray:
-    latents = jax.random.normal(key, shape=(64,))
-
-    # NOTE(scandido): We convert the field from a jax.numpy array to a numpy
-    # array here, otherwise it'll be converted on the fly every time we
-    # interpolate (due to scipy.interpolate). This conversion is a significant
-    # cost.
-    decoder = vae.Decoder()
-    return np.asarray(decoder.apply(self.params, latents))
-
-
-class GenerativeWindField(wind_field.WindField):
-  """A wind field created by a generative model."""
-
-  def __init__(self):
-    """GenerativeWindField Constructor.
-
-    Note: This wind field is deprecated. Please use GridBasedWindField with
-    GenerativeWindFieldSampler instead.
+    Args:
+      wind_field_sampler: An object that can be used to sample wind fields.
     """
-    super(GenerativeWindField, self).__init__()
-    logging.warning('GenerativeWindField is deprecated and will be removed in '
-                    'v1.1.0. Please use GridBasedWindField with '
-                    'GenerativeWindFieldSampler instead.')
+    super(GridBasedWindField, self).__init__()
 
-    serialized_params = models.load_offlineskies22()
-    self.params = flax.serialization.msgpack_restore(serialized_params)
+    self._wind_field_sampler = wind_field_sampler
+    self.field_shape = self._wind_field_sampler.field_shape
+    self.field = None  # Will be initialized with reset_forecast.
 
-    self.field = None
-
-    self.field_shape: vae.FieldShape = vae.FieldShape()
     # NOTE(scandido): We convert the field from a jax.numpy arrays to a numpy
     # arrays here, otherwise it'll be converted on the fly every time we
     # interpolate (due to scipy.interpolate). This conversion is not a huge cost
     # but the conversion on self.field (see reset() method) is significant so
     # we also do this one for completeness.
     self._grid = (
-        np.array(self.field_shape.latlng_grid_points()),    # Lats.
-        np.array(self.field_shape.latlng_grid_points()),    # Lngs.
-        np.array(self.field_shape.pressure_grid_points()),  # Pressures.
-        np.array(self.field_shape.time_grid_points()))      # Times.
+        np.asarray(self.field_shape.latlng_grid_points()),    # Lats.
+        np.asarray(self.field_shape.latlng_grid_points()),    # Lngs.
+        np.asarray(self.field_shape.pressure_grid_points()),  # Pressures.
+        np.asarray(self.field_shape.time_grid_points()))      # Times.
 
   def reset_forecast(self, key: jnp.ndarray, date_time: dt.datetime) -> None:
     """Resets the wind field.
+
+    Note: Must be overridden by child class!
+    The child class should set self.field here. The shape of self.field
+    should match the field_shape passed to the constructor.
 
     Args:
       key: A PRNG key used to sample a new location and time for the wind field.
       date_time: An instance of a datetime object, representing the start
           of the wind field.
     """
-    latents = jax.random.normal(key, shape=(64,))
-
-    # NOTE(scandido): We convert the field from a jax.numpy array to a numpy
-    # array here, otherwise it'll be converted on the fly every time we
-    # interpolate (due to scipy.interpolate). This conversion is a significant
-    # cost.
-    decoder = vae.Decoder()
-    self.field = np.array(decoder.apply(self.params, latents))
+    self.field = self._wind_field_sampler.sample_field(key, date_time)
 
   def get_forecast(self, x: units.Distance, y: units.Distance, pressure: float,
                    elapsed_time: dt.timedelta) -> wind_field.WindVector:
@@ -222,3 +186,4 @@ class GenerativeWindField(wind_field.WindField):
     point[:, 3] = time_field_position
 
     return point
+
