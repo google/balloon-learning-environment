@@ -270,7 +270,7 @@ class BalloonEnv(gym.Env):
   @property
   def observation_space(self) -> gym.Space:
     """Gets the observation space."""
-    return self.arena.feature_constructor.observation_space
+    return self.arena.feature_constructor.observation_space  # pytype: disable=attribute-error  # trace-all-classes
 
   @property
   def reward_range(self) -> Tuple[float, float]:

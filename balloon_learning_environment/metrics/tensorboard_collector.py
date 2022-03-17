@@ -53,7 +53,7 @@ class TensorboardCollector(collector.Collector):
   def _log_fine_grained_statistics(
       self, statistics: statistics_instance.StatisticsInstance) -> None:
     self.summary_writer.scalar('Train/FineGrainedReward', statistics.reward,
-                               self._global_step)
+                               self._global_step)  # pytype: disable=attribute-error  # trace-all-classes
     self.summary_writer.flush()
 
   def step(self, statistics: statistics_instance.StatisticsInstance) -> None:
@@ -73,7 +73,7 @@ class TensorboardCollector(collector.Collector):
     self.summary_writer.scalar('Train/EpisodeLength', statistics.step,
                                self.current_episode)
     self.summary_writer.flush()
-    self._global_step += 1
+    self._global_step += 1  # pytype: disable=attribute-error  # trace-all-classes
     self.current_episode += 1
 
   def end_training(self) -> None:

@@ -86,10 +86,10 @@ class ConsoleCollector(collector.Collector):
     logging.info(episode_string)
 
     if self._log_file is not None:
-      self._log_file_writer.write(episode_string)
+      self._log_file_writer.write(episode_string)  # pytype: disable=attribute-error  # trace-all-classes
 
     self.current_episode += 1
 
   def end_training(self) -> None:
     if self._log_file is not None:
-      self._log_file_writer.close()
+      self._log_file_writer.close()  # pytype: disable=attribute-error  # trace-all-classes
