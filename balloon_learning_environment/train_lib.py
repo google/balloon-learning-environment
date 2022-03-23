@@ -106,7 +106,7 @@ def run_training_loop(base_dir: str,
   checkpoint_dir = osp.join(base_dir, 'checkpoints')
   # Possibly reload the latest checkpoint, and start from the next episode
   # number.
-  start_iteration = max(agent.reload_latest_checkpoint(checkpoint_dir), 0)
+  start_iteration = max(agent.reload_latest_checkpoint(checkpoint_dir) + 1, 0)
   dispatcher = collector_dispatcher.CollectorDispatcher(
       base_dir,
       env.action_space.n,

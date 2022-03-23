@@ -161,5 +161,21 @@ class TrainLibTest(parameterized.TestCase):
     self.assertEqual(self.mock_agent.begin_episode.call_count,
                      num_iterations * episodes_per_iteration)
 
+  def test_train_loop_continues_at_correct_iteration(self):
+    self.mock_agent.reload_latest_checkpoint = mock.MagicMock(return_value=8)
+
+    train_lib.run_training_loop(
+        self.create_tempdir(),
+        _MockEnv(),
+        self.mock_agent,
+        num_iterations=10,
+        max_episode_length=1,
+        collector_constructors=[],
+        episodes_per_iteration=1)
+
+    # Run with 10 episodes, agent says checkpoint 8 was loaded (9th iteration).
+    # Therefore, there is only one iteration left, with 1 episode.
+    self.assertEqual(self.mock_agent.begin_episode.call_count, 1)
+
 if __name__ == '__main__':
   absltest.main()
