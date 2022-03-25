@@ -78,3 +78,4 @@ urllib3==1.26.7
 Werkzeug==2.0.2
 wrapt==1.12.1
 zipp==3.6.0
+rliable>=1.0.6
