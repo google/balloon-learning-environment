@@ -15,12 +15,27 @@
 
 """Tests for transforms."""
 
+from typing import Union
+
 from absl.testing import absltest
 from absl.testing import parameterized
 from balloon_learning_environment.utils import transforms
+import numpy as np
 
 
 class TransformsTest(parameterized.TestCase):
+
+  def assertFloatOrArrayAlmostEqual(self,
+                                    x: Union[float, np.ndarray],
+                                    y: Union[float, np.ndarray]):
+    if isinstance(x, np.ndarray):
+      if not isinstance(y, np.ndarray):
+        self.fail(f'Cannot compare ndarray with {type(y)}')
+      np.testing.assert_allclose(x, y)
+    else:
+      if not isinstance(y, (int, float)):
+        self.fail(f'Cannot compare {type(x)} with {type(y)}')
+      self.assertAlmostEqual(x, y)
 
   def test_linear_rescale_with_extrapolation_with_invalid_range(self):
     with self.assertRaises(ValueError):
@@ -31,10 +46,16 @@ class TransformsTest(parameterized.TestCase):
       dict(testcase_name='LowerLimit', x=10.0, expected=0.0),
       dict(testcase_name='UpperLimit', x=20.0, expected=1.0),
       dict(testcase_name='LowerExtrapolate', x=5.0, expected=-0.5),
-      dict(testcase_name='UpperExtrapolate', x=25.0, expected=1.5))
-  def test_linear_rescale_with_extrapolation(self, x: float, expected: float):
-    self.assertEqual(
-        transforms.linear_rescale_with_extrapolation(x, 10., 20.),
+      dict(testcase_name='UpperExtrapolate', x=25.0, expected=1.5),
+      dict(
+          testcase_name='numpy',
+          x=np.array([5.0, 10.0, 15.0, 20.0, 25.0]),
+          expected=np.array([-0.5, 0.0, 0.5, 1.0, 1.5])))
+  def test_linear_rescale_with_extrapolation(self, x: Union[float, np.ndarray],
+                                             expected: Union[float,
+                                                             np.ndarray]):
+    self.assertFloatOrArrayAlmostEqual(
+        transforms.linear_rescale_with_extrapolation(x, 10.0, 20.0),
         expected)
 
   def test_linear_rescale_with_saturation_with_invalid_range(self):
@@ -66,15 +87,29 @@ class TransformsTest(parameterized.TestCase):
 
   def test_squash_to_unit_interval_with_invalid_constant(self):
     with self.assertRaises(ValueError):
-      transforms.squash_to_unit_interval(1., -1.)
+      transforms.squash_to_unit_interval(1.0, -1.0)
+
+  @parameterized.named_parameters(
+      dict(testcase_name='float', val=-1.0),
+      dict(testcase_name='numpy', val=np.array([1.0, 1.0, -0.1])))
+  def test_squash_to_unit_interval_raises_value_error_for_negative_values(
+      self, val: Union[float, np.ndarray]):
+    with self.assertRaises(ValueError):
+      transforms.squash_to_unit_interval(val, 1.0)
 
   @parameterized.named_parameters(
       dict(testcase_name='ZeroX', x=0.0, expected=0.0),
       dict(testcase_name='OneX', x=1.0, expected=1.0),
-      dict(testcase_name='LargeX', x=500.0, expected=1.0))
-  def test_squash_to_unit_interval(self, x: float, expected: float):
-    self.assertAlmostEqual(transforms.squash_to_unit_interval(x, 1e-9),
-                           expected)
+      dict(testcase_name='LargeX', x=500.0, expected=1.0),
+      dict(
+          testcase_name='numpy',
+          x=np.array([0.0, 1.0, 5000.0]),
+          expected=np.array([0.0, 1.0, 1.0])))
+  def test_squash_to_unit_interval(
+      self, x: Union[float, np.ndarray], expected: Union[float, np.ndarray]):
+    self.assertFloatOrArrayAlmostEqual(
+        transforms.squash_to_unit_interval(x, 1e-9),
+        expected)
 
   @parameterized.named_parameters(
       dict(testcase_name='SimpleValue', x=10.0),

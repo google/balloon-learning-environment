@@ -50,7 +50,7 @@ import gin
 import gym
 import numpy as np
 
-TOLERANCE = 1e-5
+TOLERANCE = units.Distance(meters=1e-5)
 
 
 def compute_solar_angle(balloon_state: balloon.BalloonState) -> float:
@@ -502,10 +502,33 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
     distance_to_station = units.relative_distance(self._last_balloon_state.x,
                                                   self._last_balloon_state.y)
     # Normalize for downstream use.
-    station_direction /= (distance_to_station.meters + TOLERANCE)
+    station_direction /= (distance_to_station + TOLERANCE).meters
 
     pressure_range = pressure_range_builder.get_pressure_range(
         self._last_balloon_state, self._atmosphere)
+
+    # Prepare data for the wind column.
+    wind_vectors = means[:, 0:2]
+    wind_magnitudes = np.linalg.norm(wind_vectors, axis=1, ord=2)
+    wind_vectors /= (wind_magnitudes + TOLERANCE.meters).reshape(-1, 1)
+
+    if distance_to_station < TOLERANCE:
+      angle_errors = np.zeros((self.num_pressure_levels,), dtype=np.float32)
+    else:
+      # Compute the angle error (in radians, normalized in [0, 1]).
+      # TODO(bellemare): The better alternative is to compute the angle of the
+      # two vectors and subtract them. It still requires us to assign an angle
+      # to the 0 vector but hides the logic somewhere better.
+      cos_angle_errors = np.dot(wind_vectors, station_direction)
+      cos_angle_errors = np.clip(cos_angle_errors, -1.0, 1.0)
+      angle_errors = np.arccos(cos_angle_errors)
+
+      is_low_magnitude = wind_magnitudes < TOLERANCE.meters
+      angle_errors = np.where(is_low_magnitude, np.pi, angle_errors)
+
+    angle_error_features = transforms.linear_rescale_with_extrapolation(
+        angle_errors, 0, math.pi)
+    magnitude_features = transforms.squash_to_unit_interval(wind_magnitudes, 30)
 
     # Add the wind data within the valid range.
     for level, pressure in enumerate(self.pressure_levels):
@@ -517,34 +540,11 @@ class PerciatelliFeatureConstructor(FeatureConstructor):
             feature_vector, feature_index, 1)
         continue
 
-      wind_vector = means[level, 0:2]
-      magnitude = np.linalg.norm(wind_vector, ord=2)
-      wind_vector /= (magnitude + TOLERANCE)
-
-      # Compute the angle error (in radians, normalized in [0, 1]).
-      # TODO(bellemare): The better alternative is to compute the angle of the
-      # two vectors and subtract them. It still requires us to assign an angle
-      # to the 0 vector but hides the logic somewhere better.
-      # TODO(bellemare): Package this logic into a units function.
-      if distance_to_station.meters < TOLERANCE:
-        angle_error = 0.0
-      elif magnitude < TOLERANCE:
-        # TODO(bellemare): Check with Sal. How do we handle edge cases?
-        angle_error = math.pi
-      else:
-        cos_angle_error = np.dot(wind_vector, station_direction)
-        # Deal with numerical errors with np.clip.
-        cos_angle_error = np.clip(cos_angle_error, -1, 1)
-        angle_error = math.acos(cos_angle_error)
-        assert 0 <= angle_error <= math.pi
-
       assert 0.0 <= deviations[level] <= 1.00001, 'Uncertainty not in [0, 1].'
 
       feature_vector[feature_index] = deviations[level]
-      feature_vector[feature_index + 1] = (
-          transforms.linear_rescale_with_extrapolation(angle_error, 0, math.pi))
-      feature_vector[feature_index + 2] = transforms.squash_to_unit_interval(
-          magnitude, 30)
+      feature_vector[feature_index + 1] = angle_error_features[level]
+      feature_vector[feature_index + 2] = magnitude_features[level]
       feature_index += 3
 
     # Pad the vector with unreachable data BELOW the valid range.

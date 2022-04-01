@@ -15,12 +15,36 @@
 
 """Common transforms."""
 
+import typing
+from typing import Union
+
 import numpy as np
 
 
+def _contains_negative_values(x: Union[float, np.ndarray]) -> bool:
+  if isinstance(x, np.ndarray):
+    return (x < 0).any()
+  else:
+    return x < 0
+
+
+@typing.overload
+def linear_rescale_with_extrapolation(x: np.ndarray,
+                                      vmin: float,
+                                      vmax: float) -> np.ndarray:
+  ...
+
+
+@typing.overload
 def linear_rescale_with_extrapolation(x: float,
                                       vmin: float,
                                       vmax: float) -> float:
+  ...
+
+
+def linear_rescale_with_extrapolation(x,
+                                      vmin,
+                                      vmax):
   """Returns x normalized between [vmin, vmax], with possible extrapolation."""
   if vmax <= vmin:
     raise ValueError('Interval must be such that vmax > vmin.')
@@ -42,12 +66,22 @@ def linear_rescale_with_saturation(x: float, vmin: float, vmax: float) -> float:
   return np.clip(y, 0.0, 1.0).item()
 
 
+@typing.overload
+def squash_to_unit_interval(x: np.ndarray, constant: float) -> np.ndarray:
+  ...
+
+
+@typing.overload
 def squash_to_unit_interval(x: float, constant: float) -> float:
+  ...
+
+
+def squash_to_unit_interval(x, constant):
   """Scales non-negative x to be in range [0, 1], with a squash."""
   if constant <= 0:
     raise ValueError('Squash constant must be greater than zero.')
-  if x < 0:
-    raise ValueError('Squash can only be performed on a positive value.')
+  if _contains_negative_values(x):
+    raise ValueError('Squash can only be performed on non-negative values.')
   return x / (x + constant)
 
 
