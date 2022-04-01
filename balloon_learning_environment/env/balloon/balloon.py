@@ -45,6 +45,7 @@ import datetime as dt
 import enum
 from typing import Any, Dict, Tuple
 
+from absl import logging
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.env.balloon import acs
 from balloon_learning_environment.env.balloon import altitude_safety
@@ -318,206 +319,13 @@ class Balloon:
         f'multiple of the inner simulation stride (stride={stride})')
 
     for _ in range(outer_stride // inner_stride):
-      state_changes = Balloon._simulate_step_internal(
+      state_changes = _simulate_step_internal(
           self.state, wind_vector, atmosphere, effective_action, stride)
       for k, v in state_changes.items():
         setattr(self.state, k, v)
 
       if self.state.status != BalloonStatus.OK:
         break
-
-  @staticmethod
-  def _simulate_step_internal(
-      state: BalloonState,
-      wind_vector: wind_field.WindVector,
-      atmosphere: standard_atmosphere.Atmosphere,
-      action: control.AltitudeControlCommand,
-      stride: dt.timedelta,
-  ) -> Dict[str, Any]:
-    """Steps forward the simulation.
-
-    This moves the balloon's state forward according to the dynamics of motion
-    for a stratospheric balloon, and returns the attributes that need to be
-    updated.
-
-    Args:
-      state: Current state.
-      wind_vector: A vector corresponding to the wind to apply to the balloon.
-      atmosphere: The atmospheric conditions the balloon is flying in.
-      action: An AltitudeControlCommand for the system to take during this
-        simulation step, i.e., up/down/stay.
-      stride: The simulation stride, e.g., time delta elapsing in the
-        simulation.
-
-    Returns:
-      The attributes that need to be updated.
-    """
-
-    state_changes = {}
-
-    # NOTE(scandido): In the original simulator we modeled this using the
-    # stochastic hybrid automaton to use a typical ODE solver. For the purposes
-    # of this benchmark we have chosen to write the physics in a single, concise
-    # "step forward in time" function so folks can more easily inspect the
-    # model and assumptions.
-
-    ## Step 1: The balloon moves with the wind 🌬.
-
-    # NOTE(scandido): We should adjust this slightly to account for the altitude
-    # of the balloon but it's a small effect we ignore.
-    state_changes['x'] = state.x + (wind_vector.u * stride)
-    state_changes['y'] = state.y + (wind_vector.v * stride)
-
-    ## Step 2: The balloon moves up and down based on the buoyancy of the flight
-    # system 🦆.
-
-    # Compute the differential ascent rate.
-    #
-    # mg = Fb + Fd  (steady state)
-    #    = rho Volume g - 1/2 rho (d^2h/dt^2) C_drag A
-    #
-    #                   rho Volume g - mg
-    #  ==> d^2h/dt^2 = -----------------
-    #                  1/2 rho C_drag A
-    #
-    # C_drag is via linear fit during the ascent model.
-    # A ~ displacement^(2/3)
-
-    rho_air = (state.pressure * constants.DRY_AIR_MOLAR_MASS) / (
-        constants.UNIVERSAL_GAS_CONSTANT * state.ambient_temperature)
-
-    drag = state.envelope_cod * state.envelope_volume**(2.0 / 3.0)
-
-    total_flight_system_mass = (
-        constants.HE_MOLAR_MASS * state.mols_lift_gas +
-        constants.DRY_AIR_MOLAR_MASS * state.mols_air + state.envelope_mass +
-        state.payload_mass)
-
-    direction = (1.0 if rho_air * state.envelope_volume >=
-                 total_flight_system_mass else -1.0)
-    dh_dt = direction * np.sqrt(  # [m/s]
-        np.abs(2 * (rho_air * state.envelope_volume -
-                    total_flight_system_mass) * constants.GRAVITY /
-               (rho_air * drag)))
-
-    # We have the ascent rate in [m/s] but what we really care about is the
-    # differential change in our state variable, pressure. Our pressure to
-    # height map is a point-wise set of coordinates and we use a linear
-    # interpolation. Thus, a local approximation of dp/dt is just a linear
-    # factor away from dh/dt.
-    #
-    # Specifically:
-    #
-    #   p = m * h + b ==( chain rule ) ==> dp/dt = dp/dh * dh/dt = m * dh/dt
-    dp = 1.0  # [Pa] A small pressure delta.
-    height0 = atmosphere.at_pressure(state.pressure).height.meters
-    height1 = atmosphere.at_pressure(state.pressure +
-                                     direction * dp).height.meters
-    dp_dh = direction * dp / (height1 - height0)
-    dp_dt = dp_dh * dh_dt
-
-    state_changes['pressure'] = state.pressure + dp_dt * stride.total_seconds()
-
-    ## Step 3: Look up the ambient temperature, upwelling infrared radiation,
-    # and solar radiation, and calculate the internal temperature of the
-    # balloon 🌡.
-
-    solar_elevation, _, solar_flux = solar.solar_calculator(
-        state.latlng, state.date_time)
-
-    # Use standard atmosphere for temperature.
-    # A longer term goal would be to create a model with temperature lapse
-    # variability.
-    state_changes['ambient_temperature'] = atmosphere.at_pressure(
-        state.pressure).temperature
-
-    # TODO(scandido): Consider putting the main equations (dbtemp_dt) here to
-    # match the rest of the file.
-    d_internal_temp = thermal.d_balloon_temperature_dt(
-        state.envelope_volume, state.envelope_mass, state.internal_temperature,
-        state.ambient_temperature, state.pressure, solar_elevation,
-        solar_flux, state.upwelling_infrared)
-    state_changes['internal_temperature'] = (
-        state.internal_temperature + d_internal_temp * stride.total_seconds())
-
-    ## Step 4: Calculate superpressure and volume of the balloon 🎈.
-    state_changes['envelope_volume'], state_changes['superpressure'] = (
-        Balloon.calculate_superpressure_and_volume(
-            state.mols_lift_gas, state.mols_air, state.internal_temperature,
-            state.pressure, state.envelope_volume_base,
-            state.envelope_volume_dv_pressure))
-
-    if state_changes['superpressure'] > state.envelope_max_superpressure:
-      state_changes['status'] = BalloonStatus.BURST
-    if state_changes['superpressure'] <= 0.0:
-      state_changes['status'] = BalloonStatus.ZEROPRESSURE
-
-    ## Step 5: Calculate, based on desired action, whether we'll use the
-    # altitude control system (ACS) ⚙️. Adjust power usage accordingly.
-
-    if action == control.AltitudeControlCommand.UP:
-      state_changes['acs_power'] = units.Power(watts=0.0)
-      valve_area = np.pi * state.acs_valve_hole_diameter.meters**2 / 4.0
-      # Coefficient of drag on the air passing through the ACS from the
-      # aperture. A measured quantity.
-      default_valve_hole_cd = 0.62  # [.]
-      gas_density = (
-          state.superpressure +
-          state.pressure) * constants.DRY_AIR_MOLAR_MASS / (
-              constants.UNIVERSAL_GAS_CONSTANT * state.internal_temperature)
-      state_changes['acs_mass_flow'] = (
-          -1 * default_valve_hole_cd * valve_area * np.sqrt(
-              2.0 * state.superpressure * gas_density))
-    elif action == control.AltitudeControlCommand.DOWN:
-      # Run the ACS compressor at a power level that maximizes mols of air
-      # pushed into the ballonet per watt of energy at the current pressure
-      # ratio (backpressure the compressor is pushing against).
-      state_changes['acs_power'] = acs.get_most_efficient_power(
-          state.pressure_ratio)
-      # Compute mass flow rate by first computing efficiency of air flow.
-      efficiency = acs.get_fan_efficiency(state.pressure_ratio,
-                                          state_changes['acs_power'])
-      state_changes['acs_mass_flow'] = acs.get_mass_flow(
-          state_changes['acs_power'], efficiency)
-    else:  # action == control.AltitudeControlCommand.STAY.
-      state_changes['acs_power'] = units.Power(watts=0.0)
-      state_changes['acs_mass_flow'] = 0.0
-
-    state_changes['mols_air'] = state.mols_air + (
-        state_changes['acs_mass_flow'] /
-        constants.DRY_AIR_MOLAR_MASS) * stride.total_seconds()
-    state_changes['mols_air'] = np.clip(
-        state_changes['mols_air'], a_min=0.0, a_max=None)
-
-    ## Step 6: Calculate energy usage and collection, and move coulombs onto
-    # and off of the battery as apppropriate. 🔋
-
-    is_day = solar_elevation > solar.MIN_SOLAR_EL_DEG
-    state_changes['solar_charging'] = (
-        solar.solar_power(solar_elevation, state.pressure)
-        if is_day else units.Power(watts=0.0))
-    # TODO(scandido): Introduce a variable power load for cold upwelling IR?
-    state_changes['power_load'] = (
-        state.daytime_power_load if is_day else state.nighttime_power_load)
-    state_changes['power_load'] += state_changes['acs_power']
-
-    # We use a simplified model of a battery that is kept at a constant
-    # temperature and acts like an ideal energy reservoir.
-    state_changes['battery_charge'] = state.battery_charge + (
-        state_changes['solar_charging'] - state_changes['power_load']) * stride
-    state_changes['battery_charge'] = np.clip(
-        state_changes['battery_charge'], units.Energy(watt_hours=0.0),
-        state.battery_capacity)
-
-    if state_changes['battery_charge'].watt_hours <= 0.0:
-      state_changes['status'] = BalloonStatus.OUT_OF_POWER
-
-    # This must be updated in the inner loop, since the safety layer and
-    # solar calculations rely on the current time.
-    state_changes['date_time'] = state.date_time + stride
-    state_changes['time_elapsed'] = state.time_elapsed + stride
-
-    return state_changes
 
   @staticmethod
   def calculate_superpressure_and_volume(
@@ -527,54 +335,275 @@ class Balloon:
       pressure: float,
       envelope_volume_base: float,
       envelope_volume_dv_pressure: float) -> Tuple[float, float]:
-    """Calculates the current superpressure and volume of the balloon.
+    """This function is deprecated. Please use the module-level function."""
+    logging.warning(
+        'balloon.Balloon.calculate_superpressure_and_volume '
+        'is deprecated. Please use balloon.calculate_superpressure_and_volume '
+        'instead. This function will be removed in v1.1.0.')
+    return calculate_superpressure_and_volume(mols_lift_gas,
+                                              mols_air,
+                                              internal_temperature,
+                                              pressure,
+                                              envelope_volume_base,
+                                              envelope_volume_dv_pressure)
 
-    Args:
-      mols_lift_gas: Mols of helium within the balloon envelope [mols].
-      mols_air: Mols of air within the ballonet [mols].
-      internal_temperature: The temperature of the gas in the envelope.
-      pressure: Ambient pressure of the balloon [Pa].
-      envelope_volume_base: The y-intercept for the balloon envelope volume
-        model [m^3].
-      envelope_volume_dv_pressure: The slope for the balloon envelope volume
-        model.
 
-    Returns:
-      An (envelope_volume, superpressure) tuple.
-    """
-    envelope_volume = 0.0
+def _clip(x, minval, maxval):
+  """A clip function that should be faster than numpy for scalars."""
+  return min(max(x, minval), maxval)
+
+
+def _simulate_step_internal(
+    state: BalloonState,
+    wind_vector: wind_field.WindVector,
+    atmosphere: standard_atmosphere.Atmosphere,
+    action: control.AltitudeControlCommand,
+    stride: dt.timedelta,
+) -> Dict[str, Any]:
+  """Steps forward the simulation.
+
+  This moves the balloon's state forward according to the dynamics of motion
+  for a stratospheric balloon, and returns the attributes that need to be
+  updated.
+
+  Args:
+    state: Current state.
+    wind_vector: A vector corresponding to the wind to apply to the balloon.
+    atmosphere: The atmospheric conditions the balloon is flying in.
+    action: An AltitudeControlCommand for the system to take during this
+      simulation step, i.e., up/down/stay.
+    stride: The simulation stride, e.g., time delta elapsing in the
+      simulation.
+
+  Returns:
+    The attributes that need to be updated.
+  """
+
+  state_changes = {}
+
+  # NOTE(scandido): In the original simulator we modeled this using the
+  # stochastic hybrid automaton to use a typical ODE solver. For the purposes
+  # of this benchmark we have chosen to write the physics in a single, concise
+  # "step forward in time" function so folks can more easily inspect the
+  # model and assumptions.
+
+  ## Step 1: The balloon moves with the wind 🌬.
+
+  # NOTE(scandido): We should adjust this slightly to account for the altitude
+  # of the balloon but it's a small effect we ignore.
+  state_changes['x'] = state.x + (wind_vector.u * stride)
+  state_changes['y'] = state.y + (wind_vector.v * stride)
+
+  ## Step 2: The balloon moves up and down based on the buoyancy of the flight
+  # system 🦆.
+
+  # Compute the differential ascent rate.
+  #
+  # mg = Fb + Fd  (steady state)
+  #    = rho Volume g - 1/2 rho (d^2h/dt^2) C_drag A
+  #
+  #                   rho Volume g - mg
+  #  ==> d^2h/dt^2 = -----------------
+  #                  1/2 rho C_drag A
+  #
+  # C_drag is via linear fit during the ascent model.
+  # A ~ displacement^(2/3)
+
+  rho_air = (state.pressure * constants.DRY_AIR_MOLAR_MASS) / (
+      constants.UNIVERSAL_GAS_CONSTANT * state.ambient_temperature)
+
+  drag = state.envelope_cod * state.envelope_volume**(2.0 / 3.0)
+
+  total_flight_system_mass = (
+      constants.HE_MOLAR_MASS * state.mols_lift_gas +
+      constants.DRY_AIR_MOLAR_MASS * state.mols_air + state.envelope_mass +
+      state.payload_mass)
+
+  direction = (1.0 if rho_air * state.envelope_volume >=
+               total_flight_system_mass else -1.0)
+  dh_dt = direction * np.sqrt(  # [m/s]
+      np.abs(2 * (rho_air * state.envelope_volume -
+                  total_flight_system_mass) * constants.GRAVITY /
+             (rho_air * drag)))
+
+  # We have the ascent rate in [m/s] but what we really care about is the
+  # differential change in our state variable, pressure. Our pressure to
+  # height map is a point-wise set of coordinates and we use a linear
+  # interpolation. Thus, a local approximation of dp/dt is just a linear
+  # factor away from dh/dt.
+  #
+  # Specifically:
+  #
+  #   p = m * h + b ==( chain rule ) ==> dp/dt = dp/dh * dh/dt = m * dh/dt
+  dp = 1.0  # [Pa] A small pressure delta.
+  height0 = atmosphere.at_pressure(state.pressure).height.meters
+  height1 = atmosphere.at_pressure(state.pressure +
+                                   direction * dp).height.meters
+  dp_dh = direction * dp / (height1 - height0)
+  dp_dt = dp_dh * dh_dt
+
+  state_changes['pressure'] = state.pressure + dp_dt * stride.total_seconds()
+
+  ## Step 3: Look up the ambient temperature, upwelling infrared radiation,
+  # and solar radiation, and calculate the internal temperature of the
+  # balloon 🌡.
+
+  solar_elevation, _, solar_flux = solar.solar_calculator(
+      state.latlng, state.date_time)
+
+  # Use standard atmosphere for temperature.
+  # A longer term goal would be to create a model with temperature lapse
+  # variability.
+  state_changes['ambient_temperature'] = atmosphere.at_pressure(
+      state.pressure).temperature
+
+  # TODO(scandido): Consider putting the main equations (dbtemp_dt) here to
+  # match the rest of the file.
+  d_internal_temp = thermal.d_balloon_temperature_dt(
+      state.envelope_volume, state.envelope_mass, state.internal_temperature,
+      state.ambient_temperature, state.pressure, solar_elevation,
+      solar_flux, state.upwelling_infrared)
+  state_changes['internal_temperature'] = (
+      state.internal_temperature + d_internal_temp * stride.total_seconds())
+
+  ## Step 4: Calculate superpressure and volume of the balloon 🎈.
+  state_changes['envelope_volume'], state_changes['superpressure'] = (
+      calculate_superpressure_and_volume(
+          state.mols_lift_gas,
+          state.mols_air,
+          state.internal_temperature,
+          state.pressure,
+          state.envelope_volume_base,
+          state.envelope_volume_dv_pressure))
+
+  if state_changes['superpressure'] > state.envelope_max_superpressure:
+    state_changes['status'] = BalloonStatus.BURST
+  if state_changes['superpressure'] <= 0.0:
+    state_changes['status'] = BalloonStatus.ZEROPRESSURE
+
+  ## Step 5: Calculate, based on desired action, whether we'll use the
+  # altitude control system (ACS) ⚙️. Adjust power usage accordingly.
+
+  if action == control.AltitudeControlCommand.UP:
+    state_changes['acs_power'] = units.Power(watts=0.0)
+    valve_area = np.pi * state.acs_valve_hole_diameter.meters**2 / 4.0
+    # Coefficient of drag on the air passing through the ACS from the
+    # aperture. A measured quantity.
+    default_valve_hole_cd = 0.62  # [.]
+    gas_density = (
+        state.superpressure +
+        state.pressure) * constants.DRY_AIR_MOLAR_MASS / (
+            constants.UNIVERSAL_GAS_CONSTANT * state.internal_temperature)
+    state_changes['acs_mass_flow'] = (
+        -1 * default_valve_hole_cd * valve_area * np.sqrt(
+            2.0 * state.superpressure * gas_density))
+  elif action == control.AltitudeControlCommand.DOWN:
+    # Run the ACS compressor at a power level that maximizes mols of air
+    # pushed into the ballonet per watt of energy at the current pressure
+    # ratio (backpressure the compressor is pushing against).
+    state_changes['acs_power'] = acs.get_most_efficient_power(
+        state.pressure_ratio)
+    # Compute mass flow rate by first computing efficiency of air flow.
+    efficiency = acs.get_fan_efficiency(state.pressure_ratio,
+                                        state_changes['acs_power'])
+    state_changes['acs_mass_flow'] = acs.get_mass_flow(
+        state_changes['acs_power'], efficiency)
+  else:  # action == control.AltitudeControlCommand.STAY.
+    state_changes['acs_power'] = units.Power(watts=0.0)
+    state_changes['acs_mass_flow'] = 0.0
+
+  state_changes['mols_air'] = state.mols_air + (
+      state_changes['acs_mass_flow'] /
+      constants.DRY_AIR_MOLAR_MASS) * stride.total_seconds()
+  # mols_air must be positive.
+  state_changes['mols_air'] = max(state_changes['mols_air'], 0.0)
+
+  ## Step 6: Calculate energy usage and collection, and move coulombs onto
+  # and off of the battery as apppropriate. 🔋
+
+  is_day = solar_elevation > solar.MIN_SOLAR_EL_DEG
+  state_changes['solar_charging'] = (
+      solar.solar_power(solar_elevation, state.pressure)
+      if is_day else units.Power(watts=0.0))
+  # TODO(scandido): Introduce a variable power load for cold upwelling IR?
+  state_changes['power_load'] = (
+      state.daytime_power_load if is_day else state.nighttime_power_load)
+  state_changes['power_load'] += state_changes['acs_power']
+
+  # We use a simplified model of a battery that is kept at a constant
+  # temperature and acts like an ideal energy reservoir.
+  state_changes['battery_charge'] = state.battery_charge + (
+      state_changes['solar_charging'] - state_changes['power_load']) * stride
+  state_changes['battery_charge'] = _clip(state_changes['battery_charge'],
+                                          units.Energy(watt_hours=0.0),
+                                          state.battery_capacity)
+
+  if state_changes['battery_charge'].watt_hours <= 0.0:
+    state_changes['status'] = BalloonStatus.OUT_OF_POWER
+
+  # This must be updated in the inner loop, since the safety layer and
+  # solar calculations rely on the current time.
+  state_changes['date_time'] = state.date_time + stride
+  state_changes['time_elapsed'] = state.time_elapsed + stride
+
+  return state_changes
+
+
+def calculate_superpressure_and_volume(
+    mols_lift_gas: float,
+    mols_air: float,
+    internal_temperature: float,
+    pressure: float,
+    envelope_volume_base: float,
+    envelope_volume_dv_pressure: float) -> Tuple[float, float]:
+  """Calculates the current superpressure and volume of the balloon.
+
+  Args:
+    mols_lift_gas: Mols of helium within the balloon envelope [mols].
+    mols_air: Mols of air within the ballonet [mols].
+    internal_temperature: The temperature of the gas in the envelope.
+    pressure: Ambient pressure of the balloon [Pa].
+    envelope_volume_base: The y-intercept for the balloon envelope volume
+      model [m^3].
+    envelope_volume_dv_pressure: The slope for the balloon envelope volume
+      model.
+
+  Returns:
+    An (envelope_volume, superpressure) tuple.
+  """
+  envelope_volume = 0.0
+  superpressure = 0.0
+
+  # Compute the unconstrained volume of the balloon which is
+  # (n_gas + n_air) * R * T_gas / P_amb. This is the volume the balloon would
+  # expand to if the material holding the lift gas didn't give any resistence,
+  # e.g., to a first-order approximation a latex weather ballon.
+  unconstrained_volume = (
+      (mols_lift_gas + mols_air) *
+      constants.UNIVERSAL_GAS_CONSTANT * internal_temperature /
+      pressure)
+
+  if unconstrained_volume <= envelope_volume_base:
+    # Not fully inflated.
+    envelope_volume = unconstrained_volume
     superpressure = 0.0
-
-    # Compute the unconstrained volume of the balloon which is
-    # (n_gas + n_air) * R * T_gas / P_amb. This is the volume the balloon would
-    # expand to if the material holding the lift gas didn't give any resistence,
-    # e.g., to a first-order approximation a latex weather ballon.
-    unconstrained_volume = (
-        (mols_lift_gas + mols_air) *
-        constants.UNIVERSAL_GAS_CONSTANT * internal_temperature /
+  else:
+    # System of equations for a fully inflated balloon:
+    #
+    #  V = V0 + dv_dp * (P_gas - P_amb)
+    #  P_gas = n * R * T_gas / V
+    #
+    # Solve the quadratic equation for volume:
+    b = -(
+        envelope_volume_base -
+        envelope_volume_dv_pressure * pressure)
+    c = -(
+        envelope_volume_dv_pressure * unconstrained_volume *
         pressure)
 
-    if unconstrained_volume <= envelope_volume_base:
-      # Not fully inflated.
-      envelope_volume = unconstrained_volume
-      superpressure = 0.0
-    else:
-      # System of equations for a fully inflated balloon:
-      #
-      #  V = V0 + dv_dp * (P_gas - P_amb)
-      #  P_gas = n * R * T_gas / V
-      #
-      # Solve the quadratic equation for volume:
-      b = -(
-          envelope_volume_base -
-          envelope_volume_dv_pressure * pressure)
-      c = -(
-          envelope_volume_dv_pressure * unconstrained_volume *
-          pressure)
+    envelope_volume = 0.5 * (-b + np.sqrt(b * b - 4 * c))
+    superpressure = (
+        pressure * unconstrained_volume /
+        envelope_volume - pressure)
 
-      envelope_volume = 0.5 * (-b + np.sqrt(b * b - 4 * c))
-      superpressure = (
-          pressure * unconstrained_volume /
-          envelope_volume - pressure)
-
-    return envelope_volume, superpressure
+  return envelope_volume, superpressure

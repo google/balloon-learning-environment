@@ -121,7 +121,7 @@ def calculate_stable_params_for_pressure(
 
   # ---- Cold start superpressure ----
   envelope_volume, superpressure = (
-      balloon.Balloon.calculate_superpressure_and_volume(
+      balloon.calculate_superpressure_and_volume(
           mols_lift_gas, mols_air, internal_temperature, pressure,
           envelope_volume_base, envelope_volume_dv_pressure))
 
