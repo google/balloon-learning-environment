@@ -15,20 +15,21 @@
 
 """Tests for run_helpers."""
 
+from typing import Type
 from unittest import mock
 
 from absl.testing import absltest
+from absl.testing import parameterized
 from balloon_learning_environment.agents import agent
-from balloon_learning_environment.env import balloon_env
+from balloon_learning_environment.env import grid_based_wind_field
+from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.utils import run_helpers
-from balloon_learning_environment.utils import test_helpers
 import gin
-import gym
 
 _DQN_GIN_FILE = 'balloon_learning_environment/agents/configs/dqn.gin'
 
 
-class RunHelpersTest(absltest.TestCase):
+class RunHelpersTest(parameterized.TestCase):
 
   def setUp(self):
     super().setUp()
@@ -67,6 +68,26 @@ class RunHelpersTest(absltest.TestCase):
     # The random agent is a valid agent.
     self.assertIsInstance(
         run_helpers.create_agent('random', 4, (6, 7)), agent.Agent)
+
+  def test_create_wind_field_with_invalid_name(self):
+    with self.assertRaises(ValueError):
+      run_helpers.create_wind_field('not_a_valid_wind_field')
+
+  @parameterized.named_parameters(
+      dict(
+          testcase_name='simple',
+          wind_field_name='simple',
+          expected_type=wind_field.SimpleStaticWindField),
+      dict(
+          testcase_name='generative',
+          wind_field_name='generative',
+          expected_type=grid_based_wind_field.GridBasedWindField))
+  def test_create_wind_field_returns_correct_type(
+      self,
+      wind_field_name: str,
+      expected_type: Type[wind_field.WindField]):
+    wf = run_helpers.create_wind_field(wind_field_name)
+    self.assertIsInstance(wf, expected_type)
 
   @mock.patch.object(gin, 'parse_config_files_and_bindings', autospec=True)
   def test_bind_gin_variables_binds_agent_gin_file_correctly(

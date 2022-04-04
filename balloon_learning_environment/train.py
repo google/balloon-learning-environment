@@ -22,8 +22,6 @@ import os.path as osp
 from absl import app
 from absl import flags
 from balloon_learning_environment import train_lib
-from balloon_learning_environment.env import generative_wind_field
-from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.env.rendering import matplotlib_renderer
 from balloon_learning_environment.utils import run_helpers
 import gym
@@ -67,11 +65,6 @@ flags.mark_flag_as_required('base_dir')
 FLAGS = flags.FLAGS
 
 
-_WIND_FIELDS = {
-    'generative': generative_wind_field.GenerativeWindField,
-    'simple': wind_field.SimpleStaticWindField,
-}
-
 _RENDERERS = {
     'matplotlib': matplotlib_renderer.MatplotlibRenderer,
 }
@@ -88,7 +81,7 @@ def main(_) -> None:
   if FLAGS.renderer is not None:
     renderer = _RENDERERS[FLAGS.renderer]()
 
-  wf = _WIND_FIELDS[FLAGS.wind_field]
+  wf = run_helpers.create_wind_field(FLAGS.wind_field)
   env = gym.make(FLAGS.env_name,
                  wind_field_factory=wf,
                  renderer=renderer)

@@ -21,7 +21,11 @@ from typing import Optional, Sequence
 import balloon_learning_environment
 from balloon_learning_environment.agents import agent as base_agent
 from balloon_learning_environment.agents import agent_registry
+from balloon_learning_environment.env import generative_wind_field
+from balloon_learning_environment.env import grid_based_wind_field
+from balloon_learning_environment.env import wind_field
 import gin
+
 
 
 def get_agent_gin_file(agent_name: str,
@@ -47,6 +51,26 @@ def create_agent(agent_name: str, num_actions: int,
                  observation_shape: Sequence[int]) -> base_agent.Agent:
   return agent_registry.agent_constructor(agent_name)(
       num_actions, observation_shape=observation_shape)
+
+
+def create_wind_field(wind_field_name: str) -> wind_field.WindField:
+  """Gets a wind field by name.
+
+  If the wind field name doesn't exist, raises a ValueError.
+
+  Args:
+    wind_field_name: The name of the wind field to create.
+
+  Returns:
+    A WindField object.
+  """
+  if wind_field_name == 'simple':
+    return wind_field.SimpleStaticWindField()
+  elif wind_field_name == 'generative':
+    return grid_based_wind_field.GridBasedWindField(
+        generative_wind_field.GenerativeWindFieldSampler())
+  else:
+    raise ValueError(f'Unknown wind field {wind_field_name}')
 
 
 def bind_gin_variables(
