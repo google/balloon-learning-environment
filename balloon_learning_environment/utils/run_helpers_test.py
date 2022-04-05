@@ -69,9 +69,9 @@ class RunHelpersTest(parameterized.TestCase):
     self.assertIsInstance(
         run_helpers.create_agent('random', 4, (6, 7)), agent.Agent)
 
-  def test_create_wind_field_with_invalid_name(self):
+  def test_get_wind_field_factory_with_invalid_name(self):
     with self.assertRaises(ValueError):
-      run_helpers.create_wind_field('not_a_valid_wind_field')
+      run_helpers.get_wind_field_factory('not_a_valid_wind_field')
 
   @parameterized.named_parameters(
       dict(
@@ -82,11 +82,11 @@ class RunHelpersTest(parameterized.TestCase):
           testcase_name='generative',
           wind_field_name='generative',
           expected_type=grid_based_wind_field.GridBasedWindField))
-  def test_create_wind_field_returns_correct_type(
+  def test_get_wind_field_factory_returns_correct_type(
       self,
       wind_field_name: str,
       expected_type: Type[wind_field.WindField]):
-    wf = run_helpers.create_wind_field(wind_field_name)
+    wf = run_helpers.get_wind_field_factory(wind_field_name)()
     self.assertIsInstance(wf, expected_type)
 
   @mock.patch.object(gin, 'parse_config_files_and_bindings', autospec=True)

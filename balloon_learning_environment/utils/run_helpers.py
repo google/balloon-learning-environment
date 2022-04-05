@@ -16,13 +16,12 @@
 """Helper functions for running agents in train/eval."""
 
 import os
-from typing import Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 import balloon_learning_environment
 from balloon_learning_environment.agents import agent as base_agent
 from balloon_learning_environment.agents import agent_registry
 from balloon_learning_environment.env import generative_wind_field
-from balloon_learning_environment.env import grid_based_wind_field
 from balloon_learning_environment.env import wind_field
 import gin
 
@@ -53,7 +52,8 @@ def create_agent(agent_name: str, num_actions: int,
       num_actions, observation_shape=observation_shape)
 
 
-def create_wind_field(wind_field_name: str) -> wind_field.WindField:
+def get_wind_field_factory(
+    wind_field_name: str) -> Callable[[], wind_field.WindField]:
   """Gets a wind field by name.
 
   If the wind field name doesn't exist, raises a ValueError.
@@ -62,13 +62,12 @@ def create_wind_field(wind_field_name: str) -> wind_field.WindField:
     wind_field_name: The name of the wind field to create.
 
   Returns:
-    A WindField object.
+    A callable that returns a WindField object.
   """
   if wind_field_name == 'simple':
-    return wind_field.SimpleStaticWindField()
+    return wind_field.SimpleStaticWindField
   elif wind_field_name == 'generative':
-    return grid_based_wind_field.GridBasedWindField(
-        generative_wind_field.GenerativeWindFieldSampler())
+    return generative_wind_field.generative_wind_field_factory
   else:
     raise ValueError(f'Unknown wind field {wind_field_name}')
 

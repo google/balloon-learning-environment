@@ -19,6 +19,7 @@ import datetime as dt
 from typing import List, Sequence, Union
 
 from absl import logging
+from balloon_learning_environment.env import grid_based_wind_field
 from balloon_learning_environment.env import grid_wind_field_sampler
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.generative import vae
@@ -29,6 +30,11 @@ import jax
 from jax import numpy as jnp
 import numpy as np
 import scipy.interpolate
+
+
+def generative_wind_field_factory() -> grid_based_wind_field.GridBasedWindField:
+  """A convenience function for creating a generative wind field."""
+  return grid_based_wind_field.GridBasedWindField(GenerativeWindFieldSampler())
 
 
 class GenerativeWindFieldSampler(grid_wind_field_sampler.GridWindFieldSampler):

@@ -81,9 +81,9 @@ def main(_) -> None:
   if FLAGS.renderer is not None:
     renderer = _RENDERERS[FLAGS.renderer]()
 
-  wf = run_helpers.create_wind_field(FLAGS.wind_field)
+  wf_factory = run_helpers.get_wind_field_factory(FLAGS.wind_field)
   env = gym.make(FLAGS.env_name,
-                 wind_field_factory=wf,
+                 wind_field_factory=wf_factory,
                  renderer=renderer)
 
   agent = run_helpers.create_agent(

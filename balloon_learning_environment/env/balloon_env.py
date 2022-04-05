@@ -18,7 +18,6 @@
 This provides the RL layer on top of the simulator.
 """
 
-import functools
 import math
 import time
 from typing import Any, Callable, Mapping, Optional, Text, Tuple, Union, Dict
@@ -26,7 +25,6 @@ from typing import Any, Callable, Mapping, Optional, Text, Tuple, Union, Dict
 from balloon_learning_environment.env import balloon_arena
 from balloon_learning_environment.env import features
 from balloon_learning_environment.env import generative_wind_field  # pylint: disable=unused-import
-from balloon_learning_environment.env import grid_based_wind_field
 from balloon_learning_environment.env import simulator_data
 from balloon_learning_environment.env import wind_field
 from balloon_learning_environment.env.balloon import balloon
@@ -113,15 +111,13 @@ class BalloonEnv(gym.Env):
       *,  # All arguments after this are keyword-only.
       station_keeping_radius_km: float = 50.0,
       arena: Optional[balloon_arena.BalloonArenaInterface] = None,
-      reward_function: Callable[
-          [simulator_data.SimulatorState], float] = perciatelli_reward_function,
+      reward_function: Callable[[simulator_data.SimulatorState], float] = (
+          perciatelli_reward_function),
       feature_constructor_factory: Callable[
           [wind_field.WindField, standard_atmosphere.Atmosphere],
           features.FeatureConstructor] = features.PerciatelliFeatureConstructor,
-      wind_field_factory: Callable[
-          [], wind_field.WindField] = functools.partial(
-              grid_based_wind_field.GridBasedWindField,
-              generative_wind_field.GenerativeWindFieldSampler),
+      wind_field_factory: Callable[[], wind_field.WindField] = (
+          generative_wind_field.generative_wind_field_factory),
       seed: Optional[int] = None,
       renderer: Optional[randerer_lib.Renderer] = None):
     """Constructs a Balloon Learning Environment Station Keeping Environment.
