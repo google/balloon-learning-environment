@@ -17,7 +17,7 @@ r"""Acme utils.
 """
 
 import functools
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from acme import adders
 from acme import core
@@ -139,7 +139,8 @@ def marco_polo_actor(make_actor_fn):
   return make_actor
 
 
-def create_dqn(params: Dict[str, Any]):
+def create_dqn(params: Dict[str, Any],
+               loss_fn_cls: Type[dqn.QrDqn] = dqn.QrDqn):
   """Creates necessary components to run Acme's DQN."""
   use_marco_polo_exploration = params.pop('marco_polo_exploration', False)
   update_period = 4
@@ -176,7 +177,7 @@ def create_dqn(params: Dict[str, Any]):
   def dqn_logger():
     return None
 
-  loss_fn = dqn.QrDqn(num_atoms=num_atoms, huber_param=1)
+  loss_fn = loss_fn_cls(num_atoms=num_atoms, huber_param=1)
   rl_agent = dqn.DQNBuilder(
       config=config, loss_fn=loss_fn, logger_fn=dqn_logger)
 
