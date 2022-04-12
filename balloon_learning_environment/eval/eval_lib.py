@@ -124,7 +124,8 @@ def eval_agent(agent: base_agent.Agent,
                env: balloon_env.BalloonEnv,
                eval_suite: suites.EvaluationSuite,
                *,
-               render_period: int = 10) -> List[EvaluationResult]:
+               render_period: int = 10,
+               calculate_flight_path: bool = True) -> List[EvaluationResult]:
   """Evaluates an agent on a given test suite.
 
   If the agent being evaluated is deterministic, the result of this function
@@ -136,6 +137,7 @@ def eval_agent(agent: base_agent.Agent,
     eval_suite: The evaluation suite to evaluate the agent on.
     render_period: The period with which to render the environment.
       Only has an effect if the environment as a renderer.
+    calculate_flight_path: Whether to calculate flight path.
 
   Returns:
     A list of evaluation results, corresponding to the seeds passed in by
@@ -167,7 +169,9 @@ def eval_agent(agent: base_agent.Agent,
 
       total_reward += reward
       balloon_state = env.get_simulator_state().balloon_state
-      flight_path.append(SimpleBalloonState.from_balloon_state((balloon_state)))
+      if calculate_flight_path:
+        flight_path.append(
+            SimpleBalloonState.from_balloon_state((balloon_state)))
       steps_within_radius += _balloon_is_within_radius(balloon_state,
                                                        env.radius)
 

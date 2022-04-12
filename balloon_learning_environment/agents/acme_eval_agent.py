@@ -16,7 +16,7 @@
 """Evaluation agent for ACME."""
 
 import os.path as osp
-from typing import Sequence, Union
+from typing import Sequence, Union, Dict, Any, Optional
 
 from absl import logging
 import acme
@@ -36,22 +36,46 @@ class _SimpleActorState:
   epsilon: float
 
 
+class AcmeCheckpointer(savers.Checkpointer):
+  """Class for loading checkpoints."""
+
+  def restore(self):
+    """Overrides this to avoid loading the latest checkpoint by default."""
+    # `savers.Checkpointer` always restores the latest agent, so we `pass` it.
+    pass
+
+  def restore_checkpoint(self, checkpoint_to_reload: str):
+    self._checkpoint.restore(checkpoint_to_reload).expect_partial()
+
+  @property
+  def checkpoint_dir(self):
+    return osp.dirname(self._checkpoint_manager.latest_checkpoint)
+
+
 class AcmeEvalAgent(agent.Agent):
   """Evaluation agent for ACME."""
 
-  def __init__(self, num_actions: int, observation_shape: Sequence[int]):
+  def __init__(self,
+               num_actions: int,
+               observation_shape: Sequence[int],
+               params: Optional[Dict[str, Any]] = None):
     self._num_actions = num_actions
     self._observation_shape = observation_shape
     self.set_mode(agent.AgentMode.EVAL)
+    self._create_agent(params)
+    self._setup_actor_learner()
 
-    self._rl_agent, _, dqn_network_fn, _, self._eval_policy = (
+  def _create_agent(self, params: Dict[str, Any]):
+    del params
+    self._rl_agent, _, self._network_fn, _, self._eval_policy = (
         acme_utils.create_dqn({}))
 
+  def _setup_actor_learner(self):
     observation_spec = specs.Array(
-        shape=observation_shape,
+        shape=self._observation_shape,
         dtype=np.float32,
         name='observation')
-    action_spec = specs.DiscreteArray(num_values=num_actions,
+    action_spec = specs.DiscreteArray(num_values=self._num_actions,
                                       dtype=np.int32,
                                       name='action')
     reward_spec = specs.Array(shape=(), dtype=float, name='reward')
@@ -63,7 +87,7 @@ class AcmeEvalAgent(agent.Agent):
         reward_spec,
         discount_spec)
 
-    self._dqn_network = dqn_network_fn(env_spec)
+    self._dqn_network = self._network_fn(env_spec)
     self._learner = self._rl_agent.make_learner(
         jax.random.PRNGKey(0), self._dqn_network, iter([]))
     self._actor = self._rl_agent.make_actor(
@@ -96,24 +120,18 @@ class AcmeEvalAgent(agent.Agent):
   def load_checkpoint(self, checkpoint_dir: str, iteration_number: int) -> None:
     learner = self._rl_agent.make_learner(
         jax.random.PRNGKey(0), self._dqn_network, iter([]))
-    checkpointer = savers.Checkpointer({'learner': learner},
-                                       time_delta_minutes=30,
-                                       subdirectory='learner',
-                                       directory=checkpoint_dir,
-                                       max_to_keep=400,  # Large enough number.
-                                       add_uid=False)
-    # pylint: disable=protected-access
-    checkpoint_dir = osp.dirname(
-        checkpointer._checkpoint_manager.latest_checkpoint)
-    # pylint: enable=protected-access
+    checkpointer = AcmeCheckpointer(
+        {'learner': learner},
+        time_delta_minutes=30,
+        subdirectory='learner',
+        directory=checkpoint_dir,
+        max_to_keep=400,  # Large enough number.
+        add_uid=False)
+    checkpoint_dir = checkpointer.checkpoint_dir
     checkpoint_to_reload = osp.join(checkpoint_dir, f'ckpt-{iteration_number}')
-    # Checkpointer always restores the latest agent, so we re-restore here to
-    # force a particular iteration number.
     logging.info('Attempting to restore checkpoint: %d',
                  iteration_number)
-    # pylint: disable=protected-access
-    checkpointer._checkpoint.restore(checkpoint_to_reload)
-    # pylint: enable=protected-access
+    checkpointer.restore_checkpoint(checkpoint_to_reload)
     self._actor = self._rl_agent.make_actor(
         jax.random.PRNGKey(0), self._eval_policy(self._dqn_network),
         variable_source=learner)
