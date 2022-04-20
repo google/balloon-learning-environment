@@ -17,13 +17,19 @@ r"""Acme utils.
 """
 
 import functools
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 from acme import adders
 from acme import core
 from acme import wrappers
+from acme.wrappers import observation_action_reward
 from acme.agents.jax import dqn
+from acme.agents.jax import r2d2
+from acme.agents.jax.r2d2 import networks as r2d2_networks
 from acme.jax import networks as networks_lib
+from acme.jax.networks import base
+from acme.jax.networks import duelling
+from acme.jax.networks import embedding
 from acme.jax import utils
 from balloon_learning_environment.agents import marco_polo_exploration
 from balloon_learning_environment.agents import networks
@@ -33,6 +39,7 @@ from balloon_learning_environment.env import simulator_data
 from balloon_learning_environment.utils import units
 import dm_env
 from flax import linen as nn
+import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -49,7 +56,8 @@ def _balloon_is_within_radius(state: simulator_data.SimulatorState,
           radius) / max_episode_length
 
 
-def create_env(is_eval: bool, max_episode_length: int) -> dm_env.Environment:
+def create_env(is_eval: bool, max_episode_length: int,
+               oar_wrapper: bool = False) -> dm_env.Environment:
   """Creates a BLE environment."""
   env = balloon_env.BalloonEnv()
   if is_eval:
@@ -62,6 +70,8 @@ def create_env(is_eval: bool, max_episode_length: int) -> dm_env.Environment:
   env = wrappers.step_limit.StepLimitWrapper(
       env, step_limit=max_episode_length)
   env = wrappers.SinglePrecisionWrapper(env)
+  if oar_wrapper:
+    env = wrappers.ObservationActionRewardWrapper(env)
   return env
 
 
@@ -85,6 +95,65 @@ class QuantileNetwork(nn.Module):
     # Make network batched, since this is what Acme expects.
     output = jax.vmap(batched_network)(x)
     return {'q_dist': output.logits, 'q_values': output.q_values}
+
+
+class BLETorso(base.Module):
+  """Simple MLP stack used for BLE."""
+
+  def __init__(self):
+    super().__init__(name='ble_torso')
+    layers = []
+    for _ in range(7):
+      layers.append(hk.Linear(600))
+      layers.append(jax.nn.relu)
+    layers.append(hk.Linear(600))
+    self._network = hk.Sequential(layers)
+
+  def __call__(self, inputs: jnp.ndarray) -> jnp.ndarray:
+    inputs_rank = jnp.ndim(inputs)
+    batched_inputs = inputs_rank == 2
+    if inputs_rank < 1 or inputs_rank > 2:
+      raise ValueError('Expected input BF or F. Got rank %d' % inputs_rank)
+
+    outputs = self._network(inputs)
+    if not batched_inputs:
+      return jnp.reshape(outputs, [-1])  # [D]
+    return outputs  # [B, D]
+
+
+class R2D2Network(hk.RNNCore):
+  """A duelling recurrent network for use with the BLE."""
+
+  def __init__(self, num_actions: int):
+    super().__init__(name='r2d2_ble_network')
+    self._embed = embedding.OAREmbedding(BLETorso(), num_actions)
+    self._core = hk.LSTM(512)
+    self._duelling_head = duelling.DuellingMLP(num_actions, hidden_sizes=[512])
+    self._num_actions = num_actions
+
+  def __call__(
+      self,
+      inputs: observation_action_reward.OAR,  # [B, ...]
+      state: hk.LSTMState  # [B, ...]
+  ) -> Tuple[base.QValues, hk.LSTMState]:
+    embeddings = self._embed(inputs)  # [B, D+A+1]
+    core_outputs, new_state = self._core(embeddings, state)
+    q_values = self._duelling_head(core_outputs)
+    return q_values, new_state
+
+  def initial_state(self, batch_size: int, **unused_kwargs) -> hk.LSTMState:
+    return self._core.initial_state(batch_size)
+
+  def unroll(
+      self,
+      inputs: observation_action_reward.OAR,  # [T, B, ...]
+      state: hk.LSTMState  # [T, ...]
+  ) -> Tuple[base.QValues, hk.LSTMState]:
+    """Efficient unroll that applies torso, core, and duelling mlp in one pass."""
+    embeddings = hk.BatchApply(self._embed)(inputs)  # [T, B, D+A+1]
+    core_outputs, new_states = hk.static_unroll(self._core, embeddings, state)
+    q_values = hk.BatchApply(self._duelling_head)(core_outputs)  # [T, B, A]
+    return q_values, new_states
 
 
 class CombinedActor(core.Actor):
@@ -204,3 +273,22 @@ def create_dqn(params: Dict[str, Any],
   if use_marco_polo_exploration:
     rl_agent.make_actor = marco_polo_actor(rl_agent.make_actor)
   return rl_agent, config, make_networks, behavior_policy, eval_policy
+
+
+def make_r2d2_net2work(batch_size, env_spec):
+  """Builds R2D2 network for the BLE."""
+  def forward_fn(x, s):
+    model = R2D2Network(env_spec.actions.num_values)
+    return model(x, s)
+
+  def initial_state_fn(batch_size: Optional[int] = None):
+    model = R2D2Network(env_spec.actions.num_values)
+    return model.initial_state(batch_size)
+
+  def unroll_fn(inputs, state):
+    model = R2D2Network(env_spec.actions.num_values)
+    return model.unroll(inputs, state)
+
+  return r2d2_networks.make_networks(env_spec=env_spec, forward_fn=forward_fn,
+                                     initial_state_fn=initial_state_fn,
+                                     unroll_fn=unroll_fn, batch_size=batch_size)

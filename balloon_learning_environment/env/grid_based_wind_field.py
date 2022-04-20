@@ -38,7 +38,6 @@ class GridBasedWindField(wind_field.WindField):
       wind_field_sampler: An object that can be used to sample wind fields.
     """
     super(GridBasedWindField, self).__init__()
-
     self._wind_field_sampler = wind_field_sampler
     self.field_shape = self._wind_field_sampler.field_shape
     self.field = None  # Will be initialized with reset_forecast.
