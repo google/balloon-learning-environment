@@ -23,6 +23,7 @@ learning algorithms.
    new_agent
    environment
    benchmarks
+   changelist
 
 
 Indices and tables
