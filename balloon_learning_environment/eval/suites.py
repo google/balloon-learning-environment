@@ -17,6 +17,7 @@
 
 import dataclasses
 from typing import List, Sequence
+from balloon_learning_environment.eval import strata_seeds
 
 
 @dataclasses.dataclass
@@ -40,6 +41,12 @@ _eval_suites['medium_eval'] = EvaluationSuite(list(range(1_000)), 960)
 _eval_suites['small_eval'] = EvaluationSuite(list(range(100)), 960)
 _eval_suites['tiny_eval'] = EvaluationSuite(list(range(10)), 960)
 _eval_suites['micro_eval'] = EvaluationSuite([0], 960)
+all_strata = []
+for strata in ['hardest', 'hard', 'mid', 'easy', 'easiest']:
+  _eval_suites[f'{strata}_strata'] = EvaluationSuite(
+      strata_seeds.STRATA_SEEDS[strata], 960)
+  all_strata += strata_seeds.STRATA_SEEDS[strata]
+_eval_suites['all_strata'] = EvaluationSuite(all_strata, 960)
 
 
 def available_suites() -> List[str]:
