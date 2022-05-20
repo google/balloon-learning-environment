@@ -30,6 +30,7 @@ from jax import numpy as jnp
 import numpy as np
 
 
+
 @chex.dataclass(frozen=True, mappable_dataclass=False)
 class _SimpleActorState:
   rng: jnp.ndarray
@@ -50,6 +51,10 @@ class AcmeCheckpointer(savers.Checkpointer):
   @property
   def checkpoint_dir(self):
     return osp.dirname(self._checkpoint_manager.latest_checkpoint)
+
+
+def learner_logger():
+  return None
 
 
 class AcmeEvalAgent(agent.Agent):
@@ -89,7 +94,10 @@ class AcmeEvalAgent(agent.Agent):
 
     self._dqn_network = self._network_fn(env_spec)
     self._learner = self._rl_agent.make_learner(
-        jax.random.PRNGKey(0), self._dqn_network, iter([]))
+        jax.random.PRNGKey(0),
+        self._dqn_network,
+        iter([]),
+        logger=learner_logger())
     self._actor = self._rl_agent.make_actor(
         jax.random.PRNGKey(0),
         self._eval_policy(self._dqn_network),
@@ -119,7 +127,10 @@ class AcmeEvalAgent(agent.Agent):
 
   def load_checkpoint(self, checkpoint_dir: str, iteration_number: int) -> None:
     learner = self._rl_agent.make_learner(
-        jax.random.PRNGKey(0), self._dqn_network, iter([]))
+        jax.random.PRNGKey(0),
+        self._dqn_network,
+        iter([]),
+        logger=learner_logger())
     checkpointer = AcmeCheckpointer(
         {'learner': learner},
         time_delta_minutes=30,

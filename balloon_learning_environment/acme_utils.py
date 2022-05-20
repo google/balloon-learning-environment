@@ -22,15 +22,15 @@ from typing import Any, Dict, Optional, Tuple, Type
 from acme import adders
 from acme import core
 from acme import wrappers
-from acme.wrappers import observation_action_reward
 from acme.agents.jax import dqn
 from acme.agents.jax import r2d2
 from acme.agents.jax.r2d2 import networks as r2d2_networks
 from acme.jax import networks as networks_lib
+from acme.jax import utils
 from acme.jax.networks import base
 from acme.jax.networks import duelling
 from acme.jax.networks import embedding
-from acme.jax import utils
+from acme.wrappers import observation_action_reward
 from balloon_learning_environment.agents import marco_polo_exploration
 from balloon_learning_environment.agents import networks
 from balloon_learning_environment.agents import random_walk_agent
@@ -208,6 +208,10 @@ def marco_polo_actor(make_actor_fn):
   return make_actor
 
 
+def dqn_logger():
+  return None
+
+
 def create_dqn(params: Dict[str, Any],
                loss_fn_cls: Type[dqn.QrDqn] = dqn.QrDqn):
   """Creates necessary components to run Acme's DQN."""
@@ -243,12 +247,8 @@ def create_dqn(params: Dict[str, Any],
         lambda key: q_network.init(key, dummy_obs), q_network.apply)
     return dqn_network
 
-  def dqn_logger():
-    return None
-
   loss_fn = loss_fn_cls(num_atoms=num_atoms, huber_param=1)
-  rl_agent = dqn.DQNBuilder(
-      config=config, loss_fn=loss_fn, logger_fn=dqn_logger)
+  rl_agent = dqn.DQNBuilder(config=config, loss_fn=loss_fn)
 
   def behavior_policy(dqn_network):
     def policy(params: networks_lib.Params, key: jnp.ndarray,
