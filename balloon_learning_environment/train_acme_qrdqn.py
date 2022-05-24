@@ -55,7 +55,6 @@ def main(_) -> None:
       policy_network=behavior_policy_fn(dqn_network),
       batch_size=config.batch_size,
       prefetch_size=4,
-      device_prefetch=True,
       counter=counting.Counter(counter, 'learner'))
 
   eval_actor = rl_agent.make_actor(
