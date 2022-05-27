@@ -97,10 +97,12 @@ class AcmeEvalAgent(agent.Agent):
         jax.random.PRNGKey(0),
         self._dqn_network,
         iter([]),
-        logger=learner_logger())
+        logger=learner_logger(),
+        environment_spec=env_spec)
     self._actor = self._rl_agent.make_actor(
         jax.random.PRNGKey(0),
         self._eval_policy(self._dqn_network),
+        environment_spec=env_spec,
         variable_source=self._learner)
     self._add_actor_state()
 
@@ -126,11 +128,14 @@ class AcmeEvalAgent(agent.Agent):
       raise ValueError('AcmeEvalAgent only supports EVAL mode.')
 
   def load_checkpoint(self, checkpoint_dir: str, iteration_number: int) -> None:
+    # Deprecation warning! Future actors and learners may require an env_spec.
+    env_spec = None
     learner = self._rl_agent.make_learner(
         jax.random.PRNGKey(0),
         self._dqn_network,
         iter([]),
-        logger=learner_logger())
+        logger=learner_logger(),
+        environment_spec=env_spec)
     checkpointer = AcmeCheckpointer(
         {'learner': learner},
         time_delta_minutes=30,
@@ -144,6 +149,6 @@ class AcmeEvalAgent(agent.Agent):
                  iteration_number)
     checkpointer.restore_checkpoint(checkpoint_to_reload)
     self._actor = self._rl_agent.make_actor(
-        jax.random.PRNGKey(0), self._eval_policy(self._dqn_network),
+        jax.random.PRNGKey(0), self._eval_policy(self._dqn_network), env_spec,
         variable_source=learner)
     self._add_actor_state()

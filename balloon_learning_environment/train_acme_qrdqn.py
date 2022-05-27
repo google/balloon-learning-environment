@@ -59,7 +59,8 @@ def main(_) -> None:
 
   eval_actor = rl_agent.make_actor(
       jax.random.PRNGKey(0),
-      policy_network=eval_policy_fn(dqn_network),
+      policy=eval_policy_fn(dqn_network),
+      environment_spec=env_spec,
       variable_source=agent)
 
   actor_logger = loggers.make_default_logger('actor')

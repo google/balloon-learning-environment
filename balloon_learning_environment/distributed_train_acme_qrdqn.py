@@ -58,12 +58,11 @@ def default_evaluator(
     """The evaluation process."""
 
     # Create environment and evaluator networks
-    dummy_seed = 1
-    environment = environment_factory(dummy_seed)
-    networks = network_factory(specs.make_environment_spec(environment))
+    environment = environment_factory(1)
+    environment_spec = specs.make_environment_spec(environment)
+    policy = policy_factory(network_factory(environment_spec))
 
-    actor = make_actor(
-        random_key, policy_factory(networks), variable_source)
+    actor = make_actor(random_key, policy, environment_spec, variable_source)
     actor._per_episode_update = True  # pylint: disable=protected-access
 
     # Create logger and counter.
@@ -71,8 +70,7 @@ def default_evaluator(
     logger = loggers.make_default_logger('evaluator')
 
     # Create the run loop and return it.
-    return environment_loop.EnvironmentLoop(environment, actor, counter,
-                                              logger)
+    return environment_loop.EnvironmentLoop(environment, actor, counter, logger)
   return evaluator
 
 

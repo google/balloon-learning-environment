@@ -21,9 +21,9 @@ from typing import Any, Dict, Optional, Tuple, Type
 
 from acme import adders
 from acme import core
+from acme import specs
 from acme import wrappers
 from acme.agents.jax import dqn
-from acme.agents.jax import r2d2
 from acme.agents.jax.r2d2 import networks as r2d2_networks
 from acme.jax import networks as networks_lib
 from acme.jax import utils
@@ -188,12 +188,13 @@ def marco_polo_actor(make_actor_fn):
   """Wraps make_actor_fn to include MarcoPoloExploration."""
   def make_actor(
       random_key: networks_lib.PRNGKey,
-      policy_network,
-      adder: Optional[adders.Adder] = None,
+      policy,
+      environment_spec: specs.EnvironmentSpec,
       variable_source: Optional[core.VariableSource] = None,
+      adder: Optional[adders.Adder] = None,
   ):
-    original_actor = make_actor_fn(random_key, policy_network, adder,
-                                   variable_source)
+    original_actor = make_actor_fn(random_key, policy, environment_spec,
+                                   variable_source, adder)
     if adder is None:  # eval actor
       return original_actor
 
