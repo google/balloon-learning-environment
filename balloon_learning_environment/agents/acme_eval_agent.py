@@ -97,7 +97,8 @@ class AcmeEvalAgent(agent.Agent):
         jax.random.PRNGKey(0),
         self._dqn_network,
         iter([]),
-        logger=learner_logger(),
+        logger_fn=lambda label, steps_key=None, task_instance=None:
+        learner_logger(),
         environment_spec=env_spec)
     self._actor = self._rl_agent.make_actor(
         jax.random.PRNGKey(0),
@@ -134,7 +135,8 @@ class AcmeEvalAgent(agent.Agent):
         jax.random.PRNGKey(0),
         self._dqn_network,
         iter([]),
-        logger=learner_logger(),
+        logger_fn=lambda label, steps_key=None, task_instance=None:  # pylint:disable=g-long-lambda
+        learner_logger(),
         environment_spec=env_spec)
     checkpointer = AcmeCheckpointer(
         {'learner': learner},
