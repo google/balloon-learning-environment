@@ -97,7 +97,7 @@ class QuantileNetwork(nn.Module):
     return {'q_dist': output.logits, 'q_values': output.q_values}
 
 
-class BLETorso(base.Module):
+class BLETorso(hk.Module):
   """Simple MLP stack used for BLE."""
 
   def __init__(self):
