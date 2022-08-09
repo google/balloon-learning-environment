@@ -16,16 +16,16 @@
 """Example running Acme's distributed QrDQN in JAX on the BLE."""
 
 import functools
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from absl import app
 from absl import flags
 from acme import core
 from acme import environment_loop
 from acme import specs
+from acme.jax import experiments
 from acme.jax import networks as networks_lib
 from acme.jax import types
-from acme.jax.layouts import distributed_layout
 from acme.utils import counting
 from acme.utils import loggers
 from acme.utils import lp_utils
@@ -45,15 +45,15 @@ flags.DEFINE_integer('max_episode_length', 960,
 
 def default_evaluator(
     environment_factory: types.EnvironmentFactory,
-    network_factory: distributed_layout.NetworkFactory,
-    policy_factory: distributed_layout.PolicyFactory
-) -> distributed_layout.EvaluatorFactory:
+    network_factory: experiments.NetworkFactory,
+    policy_factory: experiments.DeprecatedPolicyFactory
+) -> experiments.EvaluatorFactory:
   """Returns a default evaluator process."""
   def evaluator(
       random_key: networks_lib.PRNGKey,
       variable_source: core.VariableSource,
       counter: counting.Counter,
-      make_actor: distributed_layout.MakeActorFn,
+      make_actor: experiments.MakeActorFn,
   ):
     """The evaluation process."""
 
@@ -81,30 +81,39 @@ def get_program(params: Dict[str, Any]) -> lp.Program:
       acme_utils.create_env, max_episode_length=max_episode_length)
   seed = params.pop('seed', 0)
 
-  (rl_agent, config, dqn_network_fn, behavior_policy_fn, eval_policy_fn
-   ) = acme_utils.create_dqn(params)
+  (rl_agent, _, dqn_network_fn, behavior_policy_fn,
+   eval_policy_fn) = acme_utils.create_dqn(params)
 
-  agent = distributed_layout.DistributedLayout(
-      seed=seed,
+  def logger_factory(label: str,
+                     steps_key: Optional[str] = None,
+                     instance: Optional[int] = None) -> loggers.Logger:
+    del instance
+    return loggers.make_default_logger(
+        label,
+        save_data=label != 'actor',
+        steps_key=steps_key or f'{label}_steps')
+
+  experiment_config = experiments.ExperimentConfig(
+      builder=rl_agent,
       environment_factory=lambda seed: env_factory(False),
       network_factory=dqn_network_fn,
-      builder=rl_agent,
-      policy_network=behavior_policy_fn,
+      policy_network_factory=behavior_policy_fn,
       evaluator_factories=[
           default_evaluator(
               environment_factory=lambda seed: env_factory(True),
               network_factory=dqn_network_fn,
               policy_factory=eval_policy_fn),
       ],
-      num_actors=FLAGS.num_actors,
-      max_number_of_steps=FLAGS.num_episodes * FLAGS.max_episode_length,
-      prefetch_size=config.prefetch_size,
-      checkpointing_config=distributed_layout.CheckpointingConfig(
-          directory=FLAGS.base_dir,
-          add_uid=True,
-      ),
+      seed=seed,
+      max_num_actor_steps=FLAGS.num_episodes * FLAGS.max_episode_length,
+      logger_factory=logger_factory,
   )
-  return agent.build()
+  return experiments.make_distributed_experiment(
+      experiment_config,
+      num_actors=FLAGS.num_actors,
+      checkpointing_config=experiments.CheckpointingConfig(
+          directory=FLAGS.base_dir, add_uid=True),
+  )
 
 
 def main(_):
