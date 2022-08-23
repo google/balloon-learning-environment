@@ -107,13 +107,11 @@ def get_program(params: Dict[str, Any]) -> lp.Program:
       seed=seed,
       max_num_actor_steps=FLAGS.num_episodes * FLAGS.max_episode_length,
       logger_factory=logger_factory,
-  )
-  return experiments.make_distributed_experiment(
-      experiment_config,
-      num_actors=FLAGS.num_actors,
-      checkpointing_config=experiments.CheckpointingConfig(
+      checkpointing=experiments.CheckpointingConfig(
           directory=FLAGS.base_dir, add_uid=True),
   )
+  return experiments.make_distributed_experiment(
+      experiment_config, num_actors=FLAGS.num_actors)
 
 
 def main(_):
