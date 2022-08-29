@@ -35,7 +35,8 @@ class AgentTest(absltest.TestCase):
       def begin_episode(self, unused_obs: None) -> int:
         return 0
 
-      def step(self, reward: float, observation: None) -> int:
+      def step(  # pytype: disable=signature-mismatch  # overriding-parameter-type-checks
+          self, reward: float, observation: None) -> int:
         return 0
 
       def end_episode(self, reward: float, terminal: bool) -> None:

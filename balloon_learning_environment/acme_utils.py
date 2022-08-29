@@ -141,7 +141,8 @@ class R2D2Network(hk.RNNCore):
     q_values = self._duelling_head(core_outputs)
     return q_values, new_state
 
-  def initial_state(self, batch_size: int, **unused_kwargs) -> hk.LSTMState:
+  def initial_state(  # pytype: disable=signature-mismatch  # overriding-parameter-type-checks
+      self, batch_size: int, **unused_kwargs) -> hk.LSTMState:
     return self._core.initial_state(batch_size)
 
   def unroll(
