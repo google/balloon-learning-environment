@@ -24,7 +24,7 @@ from acme import core
 from acme import specs
 from acme import wrappers
 from acme.agents.jax import dqn
-from acme.agents.jax.r2d2 import networks as r2d2_networks
+from acme.agents.jax import r2d2
 from acme.jax import networks as networks_lib
 from acme.jax import utils
 from acme.jax.networks import base
@@ -277,20 +277,9 @@ def create_dqn(params: Dict[str, Any],
   return rl_agent, config, make_networks, behavior_policy, eval_policy
 
 
-def make_r2d2_net2work(batch_size, env_spec):
+def make_r2d2_net2work(env_spec: specs.EnvironmentSpec) -> r2d2.R2D2Networks:
   """Builds R2D2 network for the BLE."""
-  def forward_fn(x, s):
-    model = R2D2Network(env_spec.actions.num_values)
-    return model(x, s)
+  def make_core_module() -> hk.RNNCore:
+    return R2D2Network(env_spec.actions.num_values)
 
-  def initial_state_fn(batch_size: Optional[int] = None):
-    model = R2D2Network(env_spec.actions.num_values)
-    return model.initial_state(batch_size)
-
-  def unroll_fn(inputs, state):
-    model = R2D2Network(env_spec.actions.num_values)
-    return model.unroll(inputs, state)
-
-  return r2d2_networks.make_networks(env_spec=env_spec, forward_fn=forward_fn,
-                                     initial_state_fn=initial_state_fn,
-                                     unroll_fn=unroll_fn, batch_size=batch_size)
+  return networks_lib.make_unrollable_network(env_spec, make_core_module)
