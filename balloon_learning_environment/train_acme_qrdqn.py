@@ -19,7 +19,7 @@ r"""Entry point for Acme QrDQN training on the BLE."""
 from absl import app
 from absl import flags
 import acme
-from acme.jax.layouts import local_layout
+from acme.jax.deprecated import local_layout
 from acme.utils import counting
 from acme.utils import loggers
 from balloon_learning_environment import acme_utils
