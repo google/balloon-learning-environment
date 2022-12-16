@@ -21,14 +21,14 @@ import numpy as np
 from scipy import interpolate
 
 
-_PRESSURE_RATIO_TO_POWER: interpolate.interpolate.interp1d = (
+_PRESSURE_RATIO_TO_POWER: interpolate.interp1d = (
     interpolate.interp1d(
         np.array([1.0, 1.05, 1.2, 1.25, 1.35]),  # pressure_ratio
         np.array([100.0, 100.0, 300.0, 400.0, 400.0]),  # power
         fill_value='extrapolate'))
 
 
-_PRESSURE_RATIO_POWER_TO_EFFICIENCY: interpolate.interpolate.interp2d = (
+_PRESSURE_RATIO_POWER_TO_EFFICIENCY: interpolate.interp2d = (
     interpolate.interp2d(
         np.linspace(1.05, 1.35, 13),  # pressure_ratio
         np.linspace(100.0, 400.0, 4),  # power

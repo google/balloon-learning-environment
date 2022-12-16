@@ -138,7 +138,8 @@ class FeatureConstructor(abc.ABC):
   def get_features(self) -> np.ndarray:
     """Gets the current feature vector given all observations."""
 
-  @abc.abstractproperty
+  @property
+  @abc.abstractmethod
   def observation_space(self) -> gym.Space:
     """Gets the observation space specification for the feature vector."""
 

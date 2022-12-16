@@ -19,9 +19,6 @@ We use a Gaussian Process to integrate wind observations to a basic forecast.
 This lets us query any point (x, y, p, t) in the wind field for its value,
 as well as the model confidence's in this value.
 
----- Open issues
-* The forecast is not used
-
 """
 
 import datetime as dt
@@ -190,8 +187,6 @@ class WindGP(object):
 
       # Output should be a N x 2 set of predictions about local measurements,
       # and a N-sized vector of standard deviations.
-      # TODO(bellemare): Determine why deviations is a single number per sample,
-      # instead of two (since we have two values being predicted).
       means, deviations = self.model.predict(locations, return_std=True)
 
       # Deviations are std.dev., convert to variance and normalize.
@@ -199,6 +194,17 @@ class WindGP(object):
       # be. We can't have a 0 std.dev. due to noise. Currently it's something
       # like 0.07 from the GP, but that doesn't seem to match the Loon code.
       deviations = deviations**2 / _SIGMA_EXP_SQUARED
+
+      # Previously, there was a bug in sklearn which meant that the GP
+      # only returned 1 deviation per location when it should have
+      # returned 2. This has since been fixed, but people running with
+      # older code won't need to apply the next block because the shapes
+      # will work as expected.
+      assert deviations.ndim in (1, 2)
+      if deviations.ndim == 2:
+        # We use the standard deviation as a measure of uncertainty,
+        # and take the average of the two components as a proxy for this.
+        deviations = np.mean(deviations, axis=1)
 
       # TODO(bellemare): Sal says this needs normalizing so that the lower bound
       # is really zero.
