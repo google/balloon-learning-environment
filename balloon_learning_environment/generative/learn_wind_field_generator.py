@@ -28,7 +28,7 @@ from absl import logging
 from balloon_learning_environment.generative import dataset_wind_field_reservoir
 from balloon_learning_environment.generative import vae
 from balloon_learning_environment.utils import wind
-from flax import optim
+from flax import optim  # TODO(joshgreaves): Switch to optax.
 from flax.metrics import tensorboard
 from flax.training import checkpoints
 import gin
