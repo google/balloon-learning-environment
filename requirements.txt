@@ -44,7 +44,7 @@ opensimplex==0.3
 opt-einsum==3.3.0
 optax==0.0.9
 pandas==1.3.4
-Pillow==8.4.0
+Pillow==10.2.0
 protobuf==3.19.1
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
