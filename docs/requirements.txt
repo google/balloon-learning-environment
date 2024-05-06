@@ -10,6 +10,6 @@ numpy==1.21.4
 opensimplex==0.3
 s2sphere==0.2.5
 sklearn==0.0
-tensorflow==2.7.0
+tensorflow==2.11.1
 tensorflow-probability==0.15.0
 transitions==0.8.10
